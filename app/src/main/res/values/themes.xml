@@ -3,6 +3,7 @@
     <style name="Base.Theme.OnTheLamp" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:windowBackground">#000000</item> <!-- 검은색 배경 설정 -->
     </style>
 
     <style name="Theme.OnTheLamp" parent="Base.Theme.OnTheLamp" />
