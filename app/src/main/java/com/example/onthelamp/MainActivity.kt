@@ -2,46 +2,53 @@ package com.example.onthelamp
 
 import android.os.Bundle
 import android.widget.Button
+import android.widget.RelativeLayout
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.navigation.NavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
+
+    private val frame: RelativeLayout by lazy { // activity_main의 화면 부분
+        findViewById(R.id.body_container)
+    }
+    private val bottomNagivationView: BottomNavigationView by lazy { // 하단 네비게이션 바
+        findViewById(R.id.bottom_navigation)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        // 애플리케이션 실행 후 첫 화면 설정
+        supportFragmentManager.beginTransaction().add(frame.id, MapFragment()).commit()
 
-        // 지도 이동 버튼 클릭 시 MapFragment 로드
-        val mapButton = findViewById<Button>(R.id.btn_navigate_map)
-        mapButton.setOnClickListener {
-            loadFragment(MapFragment())
-        }
-
-        // 네비게이션 이동 버튼 클릭 시 NavigationFragment 로드
-        val navigationButton = findViewById<Button>(R.id.btn_navigate_navigation)
-        navigationButton.setOnClickListener {
-            loadFragment(NavigationFragment())
-        }
-
-        // 설정 이동 버튼 클릭 시 SettingsFragment 로드
-        val settingsButton = findViewById<Button>(R.id.btn_navigate_settings)
-        settingsButton.setOnClickListener {
-            loadFragment(SettingsFragment())
+        // 하단 네비게이션 바 클릭 이벤트 설정
+        bottomNagivationView.setOnNavigationItemSelectedListener {item ->
+            when(item.itemId) {
+                R.id.nav_map -> {
+                    replaceFragment(MapFragment())
+                    true
+                }
+                R.id.nav_camera -> {
+                    replaceFragment(NavigationFragment())
+                    true
+                }
+                R.id.nav_settings -> {
+                    replaceFragment(SettingsFragment())
+                    true
+                }
+                else -> false
+            }
         }
     }
 
-    private fun loadFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .commit()
+    // 화면 전환 구현 메소드
+    fun replaceFragment(fragment: Fragment) {
+        supportFragmentManager.beginTransaction().replace(frame.id, fragment).commit()
     }
 }
