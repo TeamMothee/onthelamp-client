@@ -45,4 +45,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    implementation(files("libs/tmap-sdk-1.5.aar"))
+    implementation(files("libs/vsm-tmap-sdk-v2-android-1.6.60.aar"))
 }
