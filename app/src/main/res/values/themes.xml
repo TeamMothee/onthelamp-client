@@ -4,6 +4,7 @@
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
         <item name="android:windowBackground">#292929</item>
+        <item name="android:textColor">#ffffff</item>
     </style>
 
     <style name="Theme.OnTheLamp" parent="Base.Theme.OnTheLamp" />
