@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -26,6 +28,27 @@ android {
             )
         }
     }
+
+    // BuildConfig 활성화
+    buildFeatures {
+        buildConfig = true
+    }
+
+    // local.properties에서 API 키를 읽어서 BuildConfig에 추가
+    val localProperties = rootProject.file("local.properties")
+    if (localProperties.exists()) {
+        val properties = Properties().apply {
+            load(localProperties.inputStream())
+        }
+        defaultConfig {
+            buildConfigField(
+                "String",
+                "TMAP_API_KEY",
+                "\"${properties["TMAP_API_KEY"]}\""
+            )
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
