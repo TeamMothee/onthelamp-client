@@ -1,47 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:id="@+id/body_container"
+    android:background="@color/black"
+    tools:context=".MainActivity">
 
-    <!-- Fragment가 표시될 영역 -->
     <FrameLayout
-        android:id="@+id/fragment_container"
+        android:id="@+id/frame_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_above="@id/linearLayout"/>
 
-    <!-- Bottom Navigation 또는 고정된 버튼을 추가할 수 있는 영역 -->
     <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_gravity="bottom"
-        android:padding="16dp">
+        android:layout_height="110dp"
+        android:layout_above="@id/bottom_navigation"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
 
-        <!-- 지도 이동 버튼 -->
         <Button
-            android:id="@+id/btn_navigate_map"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="지도 이동"
-            android:layout_marginEnd="8dp" />
+            android:id="@+id/danger_add_button"
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:layout_marginEnd="30dp"
+            android:elevation="2dp"
+            android:text="위험 추가" />
 
-        <!-- 네비게이션 이동 버튼 -->
         <Button
-            android:id="@+id/btn_navigate_navigation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="네비게이션 이동"
-            android:layout_marginEnd="8dp" />
+            android:id="@+id/record_button"
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:elevation="2dp"
+            android:text="촬영" />
 
-        <!-- 설정 이동 버튼 -->
         <Button
-            android:id="@+id/btn_navigate_settings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="설정 이동" />
+            android:id="@+id/image_capture_button"
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:layout_marginStart="30dp"
+            android:elevation="2dp"
+            android:text="촬영" />
+
     </LinearLayout>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:elevation="2dp"
+        app:menu="@xml/navigate_menu"
+        app:itemRippleColor="@android:color/transparent"
+        app:itemIconSize="22dp"
+        app:labelVisibilityMode="unlabeled"
+        app:itemIconTint="@drawable/navigate_selector"
+        android:id="@+id/bottom_navigation"/>
+
+</RelativeLayout>
