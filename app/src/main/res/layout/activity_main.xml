@@ -8,6 +8,45 @@
     android:background="@color/black"
     tools:context=".MainActivity">
 
+    <FrameLayout
+        android:id="@+id/frame_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/linearLayout"/>
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="110dp"
+        android:layout_above="@id/bottom_navigation"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/danger_add_button"
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:layout_marginEnd="30dp"
+            android:elevation="2dp"
+            android:text="위험 추가" />
+
+        <Button
+            android:id="@+id/record_button"
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:elevation="2dp"
+            android:text="촬영" />
+
+        <Button
+            android:id="@+id/image_capture_button"
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:layout_marginStart="30dp"
+            android:elevation="2dp"
+            android:text="촬영" />
+
+    </LinearLayout>
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -2,6 +2,7 @@ package com.example.onthelamp
 
 import android.os.Bundle
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -13,8 +14,8 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
-    private val frame: RelativeLayout by lazy { // activity_main의 화면 부분
-        findViewById(R.id.body_container)
+    private val frame: FrameLayout by lazy { // activity_main의 화면 부분
+        findViewById(R.id.frame_container)
     }
     private val bottomNagivationView: BottomNavigationView by lazy { // 하단 네비게이션 바
         findViewById(R.id.bottom_navigation)
