@@ -96,4 +96,11 @@
         app:layout_constraintEnd_toEndOf="parent"
         />
 
+    <!-- 클릭 감지용 View -->
+    <View
+        android:id="@+id/outsideTouchView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"
+        android:visibility="gone" /> <!-- 기본적으로 숨김 -->
 </androidx.constraintlayout.widget.ConstraintLayout>

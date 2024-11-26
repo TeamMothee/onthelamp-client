@@ -56,6 +56,7 @@ class MainFragment : Fragment(){
     private fun updatePOIList(topPois: List<POI>) {
         val poiAdapter = POIAdapter(topPois) // RecyclerView 어댑터 초기화
         val recyclerView = view?.findViewById<RecyclerView>(R.id.poiRecyclerView)
+        val outsideTouchView = view?.findViewById<View>(R.id.outsideTouchView)
 
         recyclerView?.apply {
             layoutManager = LinearLayoutManager(requireContext()) // 세로 리스트로 표시
@@ -69,6 +70,15 @@ class MainFragment : Fragment(){
 
             adapter = poiAdapter
             visibility = View.VISIBLE // 검색 결과가 있으면 표시
+        }
+
+        // 외부 클릭 감지 View 활성화
+        outsideTouchView?.visibility = View.VISIBLE
+
+        // 외부 클릭 시 RecyclerView 숨기기
+        outsideTouchView?.setOnClickListener {
+            recyclerView?.visibility = View.GONE
+            outsideTouchView.visibility = View.GONE
         }
     }
 
@@ -93,11 +103,13 @@ class MainFragment : Fragment(){
                         Toast.makeText(requireContext(), "검색 결과가 없습니다", Toast.LENGTH_SHORT).show()
                     }
                 } else {
+//                    TODO: Toast 메세지 수정
                     Toast.makeText(requireContext(), "API 응답 실패: ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onFailure(call: Call<SearchResponse>, t: Throwable) {
+//                    TODO: Toast 메세지 수정
                 Toast.makeText(requireContext(), "API 호출 실패: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
