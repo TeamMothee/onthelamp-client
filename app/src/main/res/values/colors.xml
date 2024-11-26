@@ -3,4 +3,5 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="btn_false">#0000FF00</color>
+    <color name="map_button_color">#FFFF00</color>
 </resources>

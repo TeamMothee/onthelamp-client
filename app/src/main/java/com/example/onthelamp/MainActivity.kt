@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // 애플리케이션 실행 후 첫 화면 설정
-        supportFragmentManager.beginTransaction().add(frame.id, MapFragment()).commit()
+        supportFragmentManager.beginTransaction().add(frame.id, MainFragment()).commit()
 
         // 하단 네비게이션 바 클릭 이벤트 설정
         bottomNagivationView.setOnNavigationItemSelectedListener {item ->
