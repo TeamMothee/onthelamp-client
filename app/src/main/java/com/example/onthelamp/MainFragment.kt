@@ -1,6 +1,10 @@
 package com.example.onthelamp
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +21,9 @@ import com.example.onthelamp.ui.DividerItemDecoration
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+
+private val handler = Handler(Looper.getMainLooper())
+private var searchRunnable: Runnable? = null
 
 class MainFragment : Fragment(){
     val tmapApiKey = BuildConfig.TMAP_API_KEY
@@ -39,18 +46,51 @@ class MainFragment : Fragment(){
         val startButton = view.findViewById<Button>(R.id.startButton)
         val startInput = view.findViewById<EditText>(R.id.startInput)
 
-        startButton.setOnClickListener {
-            val keyword = startInput.text.toString().trim()
-            if (keyword.isNotBlank()) {
-                searchPOI(keyword)
-            } else {
-//                TODO: 더 큰 alert dialog로 변경
-                Toast.makeText(requireContext(  ), "검색 키워드를 입력하세요", Toast.LENGTH_SHORT).show()
+        startInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                // Do nothing
             }
-//            (activity as MainActivity).replaceFragment(MapFragment())
-        }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val keyword = s.toString().trim()
+
+                // 이전 검색 작업 취소
+                searchRunnable?.let { handler.removeCallbacks(it) }
+
+                // 새로운 검색 작업 설정
+                searchRunnable = Runnable {
+                    if (keyword.isNotBlank()) {
+                        searchPOI(keyword)
+                    } else {
+                        hideRecyclerView()
+                    }
+                }
+                handler.postDelayed(searchRunnable!!, 150)
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                // Do nothing
+            }
+        })
+//        startButton.setOnClickListener {
+//            val keyword = startInput.text.toString().trim()
+//            if (keyword.isNotBlank()) {
+//                searchPOI(keyword)
+//            } else {
+////                TODO: 더 큰 alert dialog로 변경
+//                Toast.makeText(requireContext(  ), "검색 키워드를 입력하세요", Toast.LENGTH_SHORT).show()
+//            }
+////            (activity as MainActivity).replaceFragment(MapFragment())
+//        }
 
         return view
+    }
+
+    private fun hideRecyclerView() {
+        val recyclerView = view?.findViewById<RecyclerView>(R.id.poiRecyclerView)
+        val outsideTouchView = view?.findViewById<View>(R.id.outsideTouchView)
+        recyclerView?.visibility = View.GONE
+        outsideTouchView?.visibility = View.GONE
     }
 
     private fun updatePOIList(topPois: List<POI>) {
