@@ -23,11 +23,23 @@
             android:name="imageUri"
             app:argType="string" />
     </fragment>
+
     <fragment
         android:id="@+id/mainFragment"
         android:name="com.example.onthelamp.MainFragment"
         android:label="MainFragment"
-        tools:layout="@layout/fragment_main"/>
+        tools:layout="@layout/fragment_main">
+        <action
+            android:id="@+id/action_mainFragment_to_mapFragment"
+            app:destination="@id/mapFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.example.onthelamp.MapFragment"
+        android:label="MapFragment"
+        tools:layout="@layout/fragment_map" />
+
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.example.onthelamp.SettingsFragment"

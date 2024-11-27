@@ -1,5 +1,8 @@
 package com.example.onthelamp
 
+import android.os.Parcelable
+import java.io.Serializable
+
 data class SearchResponse(
     val searchPoiInfo: SearchPoiInfo?
 )
@@ -19,4 +22,4 @@ data class POI(
     val upperAddrName: String?,
     val middleAddrName: String?,
     val lowerAddrName: String?
-)
+) : Serializable

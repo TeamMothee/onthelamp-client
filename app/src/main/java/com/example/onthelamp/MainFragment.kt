@@ -16,6 +16,7 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import com.skt.tmap.TMapView
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.onthelamp.ui.DividerItemDecoration
@@ -51,9 +52,14 @@ class MainFragment : Fragment(){
         tMapView = TMapView(requireContext())
         tMapView.setSKTMapApiKey(tmapApiKey)
         tmapViewContainer.addView(tMapView)
+//      TODO: gps로 현재 위치 받아오기
+//        tMapView.setOnMapReadyListener {
+//            Log.d("MainFragment", "TMapView initialized successfully")
+//            tMapView.setCenterPoint(126.5662, 33.3786, true) // 새로운 좌표 (33.3786° N, 126.5662° E)로 이동
+//
+//        }
 
         // 버튼 클릭 시 MapFragment로 전환
-        val startButton = view.findViewById<Button>(R.id.startButton)
         val startInput = view.findViewById<EditText>(R.id.startInput)
 
         textWatcher = object : TextWatcher {
@@ -85,6 +91,13 @@ class MainFragment : Fragment(){
 
         startInput.addTextChangedListener(textWatcher) // TextWatcher 등록
 
+        // 버튼 클릭 이벤트 처리
+        val startButton = view.findViewById<Button>(R.id.startButton)
+        startButton.setOnClickListener {
+            navigateToMapFragment() // 버튼 클릭 시 MapFragment로 이동
+        }
+
+
         return view
     }
 
@@ -101,38 +114,22 @@ class MainFragment : Fragment(){
         // RecyclerView 숨기기
         hideRecyclerView()
         // 지도에 마커 추가 및 이동
-//        addMarkerToMap(selectedItem)
+//        TODO: 마커 추가 및 이동
+        addMarker(selectedItem)
     }
 
-//    private fun addMarkerToMap(poi: POI) {
-//        // 기존 마커 삭제
-//        tMapView.removeAllTMapMarkerItem()
-//
-//        // POI 좌표 및 마커 생성
-//        val latitude = poi.frontLat
-//        val longitude = poi.frontLon
-//
-//        if (latitude != null && longitude != null) {
-//            val markerPosition = TMapPoint(latitude, longitude)
-//
-//            val marker = TMapMarkerItem().apply {
-//                id = poi.name
-//                tMapPoint = markerPosition
-//                name = poi.name
-////                icon = BitmapFactory.decodeResource(resources, R.drawable.ic_marker)
-//            }
-//
-//            // 지도에 마커 추가
-//            tMapView.addTMapMarkerItem(marker)
-//
-//            // 지도 중심 이동
-//            tMapView.setCenterPoint(longitude, latitude, true)
-//        } else {
-////            TODO: Toast 메세지 수정
-//            Toast.makeText(context, "Invalid location data", Toast.LENGTH_SHORT).show()
-//        }
-//
-//    }
+    private fun navigateToMapFragment() {
+        if (selectedPOI != null) {
+            val bundle = Bundle().apply {
+                putSerializable("selectedPOI", selectedPOI) // Serializable로 데이터 전달
+            }
+            findNavController().navigate(R.id.action_mainFragment_to_mapFragment, bundle)
+        } else {
+//            TODO: Toast 메세지 수정
+            Toast.makeText(requireContext(), "위치를 선택해주세요.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
 
     private fun hideRecyclerView() {
@@ -206,6 +203,26 @@ class MainFragment : Fragment(){
                 Toast.makeText(requireContext(), "API 호출 실패: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
+    }
+
+    private fun addMarker(poi: POI) {
+        val markerPosition = TMapPoint(poi.frontLat!!, poi.frontLon!!) // 마커 위치
+
+        val markerItem = TMapMarkerItem().apply {
+            id = "marker_1" // 마커 식별자
+            tMapPoint = markerPosition // 마커 위치 설정
+            name = poi.name // 마커 이름
+            canShowCallout = true // 마커 클릭 시 이름 표시
+            calloutTitle = poi.name // 표시할 이름
+            calloutSubTitle = "${poi.upperAddrName} ${poi.middleAddrName} ${poi.lowerAddrName}" // 부제목
+            icon = BitmapFactory.decodeStream(requireContext().assets.open("marker_icon.png")) // 마커 아이콘
+        }
+
+
+        tMapView.addTMapMarkerItem(markerItem) // 지도에 마커 추가
+        tMapView.zoomLevel = 16 // 줌 레벨 설정
+        tMapView.setCenterPoint( markerPosition.latitude, markerPosition.longitude) // 마커 중심으로 지도 이동
+
     }
 }
 
