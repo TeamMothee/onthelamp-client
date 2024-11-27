@@ -1,5 +1,6 @@
 package com.example.onthelamp
 
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -18,6 +19,8 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.onthelamp.ui.DividerItemDecoration
+import com.skt.tmap.TMapPoint
+import com.skt.tmap.overlay.TMapMarkerItem
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -29,6 +32,13 @@ class MainFragment : Fragment(){
     val tmapApiKey = BuildConfig.TMAP_API_KEY
     val topPoiLimit = 4
 
+    private var selectedPOI: POI? = null // 선택된 위치 데이터
+
+    private var textWatcher: TextWatcher? = null // TextWatcher 참조 저장
+
+    private lateinit var tMapView: TMapView // TMapView 객체
+    private val markerMap = mutableMapOf<String, TMapMarkerItem>() // 추가된 마커 관리
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -38,7 +48,7 @@ class MainFragment : Fragment(){
 
         // TMapView 동적 추가
         val tmapViewContainer = view.findViewById<FrameLayout>(R.id.tmapViewContainer)
-        val tMapView = TMapView(requireContext())
+        tMapView = TMapView(requireContext())
         tMapView.setSKTMapApiKey(tmapApiKey)
         tmapViewContainer.addView(tMapView)
 
@@ -46,7 +56,7 @@ class MainFragment : Fragment(){
         val startButton = view.findViewById<Button>(R.id.startButton)
         val startInput = view.findViewById<EditText>(R.id.startInput)
 
-        startInput.addTextChangedListener(object : TextWatcher {
+        textWatcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
                 // Do nothing
             }
@@ -71,20 +81,59 @@ class MainFragment : Fragment(){
             override fun afterTextChanged(s: Editable?) {
                 // Do nothing
             }
-        })
-//        startButton.setOnClickListener {
-//            val keyword = startInput.text.toString().trim()
-//            if (keyword.isNotBlank()) {
-//                searchPOI(keyword)
-//            } else {
-////                TODO: 더 큰 alert dialog로 변경
-//                Toast.makeText(requireContext(  ), "검색 키워드를 입력하세요", Toast.LENGTH_SHORT).show()
-//            }
-////            (activity as MainActivity).replaceFragment(MapFragment())
-//        }
+        }
+
+        startInput.addTextChangedListener(textWatcher) // TextWatcher 등록
 
         return view
     }
+
+    private fun handlePOISelection(selectedItem: POI) {
+        // 선택된 POI 저장
+        selectedPOI = selectedItem
+
+        // TextWatcher 제거 -> 텍스트 업데이트 -> 다시 추가
+        val startInput = view?.findViewById<EditText>(R.id.startInput)
+        startInput?.removeTextChangedListener(textWatcher)
+        startInput?.setText(selectedItem.name)
+        startInput?.addTextChangedListener(textWatcher)
+
+        // RecyclerView 숨기기
+        hideRecyclerView()
+        // 지도에 마커 추가 및 이동
+//        addMarkerToMap(selectedItem)
+    }
+
+//    private fun addMarkerToMap(poi: POI) {
+//        // 기존 마커 삭제
+//        tMapView.removeAllTMapMarkerItem()
+//
+//        // POI 좌표 및 마커 생성
+//        val latitude = poi.frontLat
+//        val longitude = poi.frontLon
+//
+//        if (latitude != null && longitude != null) {
+//            val markerPosition = TMapPoint(latitude, longitude)
+//
+//            val marker = TMapMarkerItem().apply {
+//                id = poi.name
+//                tMapPoint = markerPosition
+//                name = poi.name
+////                icon = BitmapFactory.decodeResource(resources, R.drawable.ic_marker)
+//            }
+//
+//            // 지도에 마커 추가
+//            tMapView.addTMapMarkerItem(marker)
+//
+//            // 지도 중심 이동
+//            tMapView.setCenterPoint(longitude, latitude, true)
+//        } else {
+////            TODO: Toast 메세지 수정
+//            Toast.makeText(context, "Invalid location data", Toast.LENGTH_SHORT).show()
+//        }
+//
+//    }
+
 
     private fun hideRecyclerView() {
         val recyclerView = view?.findViewById<RecyclerView>(R.id.poiRecyclerView)
@@ -94,7 +143,10 @@ class MainFragment : Fragment(){
     }
 
     private fun updatePOIList(topPois: List<POI>) {
-        val poiAdapter = POIAdapter(topPois) // RecyclerView 어댑터 초기화
+        val poiAdapter = POIAdapter(topPois) { selectedItem ->
+            // 아이템 클릭 이벤트 처리
+            handlePOISelection(selectedItem)
+        }
         val recyclerView = view?.findViewById<RecyclerView>(R.id.poiRecyclerView)
         val outsideTouchView = view?.findViewById<View>(R.id.outsideTouchView)
 
@@ -140,6 +192,7 @@ class MainFragment : Fragment(){
                         // RecyclerView에 데이터를 전달 (별도 메서드에서 처리)
                         updatePOIList(topPois)
                     } else {
+//                        TODO: 큰 dialog로 수정
                         Toast.makeText(requireContext(), "검색 결과가 없습니다", Toast.LENGTH_SHORT).show()
                     }
                 } else {
