@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/mapFragment">
+
+    <fragment
+        android:id="@+id/navigationFragment"
+        android:name="com.example.onthelamp.NavigationFragment"
+        android:label="NavigationFragment"
+        tools:layout="@layout/fragment_navigation">
+        <action
+            android:id="@+id/action_navigationFragment_to_imageCaptioningFragment"
+            app:destination="@id/imageCaptioningFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/imageCaptioningFragment"
+        android:name="com.example.onthelamp.ImageCaptioningFragment"
+        android:label="ImageCaptioningFragment"
+        tools:layout="@layout/fragment_image_captioning">
+        <argument
+            android:name="imageUri"
+            app:argType="string" />
+    </fragment>
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.example.onthelamp.MapFragment"
+        android:label="MapFragment" />
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.onthelamp.SettingsFragment"
+        android:label="SettingsFragment" />
+</navigation>

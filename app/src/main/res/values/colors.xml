@@ -4,4 +4,9 @@
     <color name="white">#FFFFFFFF</color>
     <color name="btn_false">#0000FF00</color>
     <color name="map_button_color">#FFFF00</color>
+    <color name="btn_false">#0000FF00</color>
+    <color name="button_red">#FFFF3434</color>
+    <color name="button_green">#FF00FF29</color>
+    <color name="button_blue">#FF439AFF</color>
+    <color name="background_black">#FF292929</color>
 </resources>
