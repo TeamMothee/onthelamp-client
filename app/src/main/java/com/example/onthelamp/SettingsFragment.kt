@@ -14,4 +14,17 @@ class SettingsFragment : Fragment() {
         // fragment_settings.xml 레이아웃을 사용하여 화면을 구성합니다.
         return inflater.inflate(R.layout.fragment_settings, container, false)
     }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val mainActivity = activity as? MainActivity
+        mainActivity?.apply{
+            setRightButtonAction {
+
+            }
+        }
+
+        mainActivity?.setRightButtonColor(R.color.button_blue)
+    }
 }

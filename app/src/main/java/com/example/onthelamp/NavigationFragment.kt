@@ -23,7 +23,10 @@ import com.google.common.util.concurrent.ListenableFuture
 import android.net.Uri
 
 import android.widget.Button
+import android.widget.ImageView
 import androidx.camera.core.*
+import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -34,6 +37,7 @@ class NavigationFragment : Fragment() {
     private lateinit var previewView: PreviewView
     private lateinit var cameraExecutor: ExecutorService
     private var imageCapture: ImageCapture? = null
+    lateinit var captureButton: Button
 
     companion object {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 101
@@ -46,16 +50,38 @@ class NavigationFragment : Fragment() {
         // fragment_navigation.xml 레이아웃을 사용하여 화면을 구성합니다.
         var view = inflater.inflate(R.layout.fragment_navigation, container, false)
         previewView = view.findViewById(R.id.previewView)
-        val captureButton: Button = view.findViewById(R.id.image_capture_button)
 
-        captureButton.setOnClickListener {
-            takePhoto()
-        }
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        val mainActivity = activity as? MainActivity
+//        mainActivity?.rightButton?.setOnClickListener{
+//            takePhoto()
+//        }
+
+        mainActivity?.apply{
+            setRightButtonAction {
+                takePhoto { savedUri ->
+                    if (savedUri != null) {
+                        val bundle = Bundle().apply {
+                            putString("savedUri", savedUri.toString())
+                        }
+                        findNavController().navigate(R.id.imageCaptioningFragment, bundle)
+                    } else {
+                        Toast.makeText(requireContext(), "Photo capture failed.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+//                takePhoto(null)
+            }
+            setLeftButtonAction {
+                materialRadioDialog()
+            }
+        }
+
+        mainActivity?.setRightButtonColor(R.color.button_green)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -99,7 +125,7 @@ class NavigationFragment : Fragment() {
         }, ContextCompat.getMainExecutor(requireContext()))
     }
 
-    private fun takePhoto() {
+    private fun takePhoto(onPhotoCaptured : ((Uri) -> Unit)? = null) {
         val imageCapture = imageCapture ?: return
 
         // Create a unique file name for the photo
@@ -124,6 +150,8 @@ class NavigationFragment : Fragment() {
                     val savedUri: Uri = Uri.fromFile(photoFile)
                     Log.d("NavigationFragment", "Photo capture succeeded: $savedUri")
                     Toast.makeText(requireContext(), "Photo saved: $savedUri", Toast.LENGTH_SHORT).show()
+//                    findNavController().navigate(R.id.imageCaptioningFragment)
+                    onPhotoCaptured?.invoke(savedUri)
                 }
             }
         )
@@ -144,5 +172,24 @@ class NavigationFragment : Fragment() {
                 Toast.makeText(requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun materialRadioDialog() {
+        val singleItems = arrayOf("banana", "apple", "watermelon")
+        var checkedItem = 0
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Choose what you like")
+            .setNeutralButton("cancel") { dialog, which ->
+                // Respond to neutral button press
+            }
+            .setPositiveButton("ok") { dialog, which ->
+                Toast.makeText(requireContext(), "Oh, you like ${singleItems[checkedItem]}!", Toast.LENGTH_SHORT).show()
+            }
+            // Single-choice items (initialized with checked item)
+            .setSingleChoiceItems(singleItems, checkedItem) { dialog, which ->
+                checkedItem = which
+            }
+            .show()
     }
 }

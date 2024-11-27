@@ -71,6 +71,8 @@ dependencies {
 
     implementation("androidx.camera:camera-view:1.1.0-beta01")
     implementation("androidx.camera:camera-extensions:1.1.0-beta01")
+
+//    implementation("androidx.navigation:navigation-safe-args-gradle-plugin:2.7.3")
 //
 //    implementation("androidx.camera:camera-core:1.5.0")
 //    implementation("androidx.camera:camera-camera2:1.5.0")

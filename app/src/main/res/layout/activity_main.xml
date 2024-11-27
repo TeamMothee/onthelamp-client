@@ -8,11 +8,21 @@
     android:background="@color/black"
     tools:context=".MainActivity">
 
-    <FrameLayout
-        android:id="@+id/frame_container"
+<!--    <FrameLayout-->
+<!--        android:id="@+id/frame_container"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_above="@id/linearLayout"/>-->
+
+    <fragment
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/linearLayout"/>
+        android:layout_above="@id/linearLayout"
+        android:id="@+id/my_nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        app:navGraph="@navigation/nav_graph"
+        app:defaultNavHost="true"
+        />
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -20,14 +30,18 @@
         android:layout_height="110dp"
         android:layout_above="@id/bottom_navigation"
         android:gravity="center_horizontal"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:background="@color/background_black">
 
         <Button
-            android:id="@+id/danger_add_button"
+            android:id="@+id/left_button"
             android:layout_width="110dp"
-            android:layout_height="110dp"
+            android:layout_height="60dp"
             android:layout_marginEnd="30dp"
             android:elevation="2dp"
+            android:backgroundTint="@color/button_red"
+            android:textColor="@color/black"
+            android:visibility="visible"
             android:text="위험 추가" />
 
         <Button
@@ -35,14 +49,17 @@
             android:layout_width="110dp"
             android:layout_height="110dp"
             android:elevation="2dp"
-            android:text="촬영" />
+            android:text="마이크" />
 
         <Button
-            android:id="@+id/image_capture_button"
+            android:id="@+id/right_button"
             android:layout_width="110dp"
-            android:layout_height="110dp"
+            android:layout_height="60dp"
             android:layout_marginStart="30dp"
             android:elevation="2dp"
+            android:backgroundTint="@color/button_green"
+            android:textColor="@color/black"
+            android:visibility="visible"
             android:text="촬영" />
 
     </LinearLayout>
@@ -52,6 +69,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:elevation="2dp"
+        android:background="@color/background_black"
         app:menu="@xml/navigate_menu"
         app:itemRippleColor="@android:color/transparent"
         app:itemIconSize="22dp"
