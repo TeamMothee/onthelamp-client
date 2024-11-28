@@ -1,6 +1,9 @@
 package com.example.onthelamp
 
 import android.os.Parcelable
+import androidx.versionedparcelable.VersionedParcelize
+import kotlinx.parcelize.Parcelize
+
 import java.io.Serializable
 
 data class SearchResponse(
@@ -15,6 +18,7 @@ data class POIs(
     val poi: List<POI>?
 )
 
+@Parcelize
 data class POI(
     val name: String?,
     val frontLat: Double?,  // 입구 위도
@@ -22,4 +26,4 @@ data class POI(
     val upperAddrName: String?,
     val middleAddrName: String?,
     val lowerAddrName: String?
-) : Serializable
+) : Parcelable

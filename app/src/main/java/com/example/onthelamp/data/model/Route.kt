@@ -1,12 +1,12 @@
 package com.example.onthelamp.data.model
 
 data class PedestrianRouteRequest(
-    val startX: String,
-    val startY: String,
-    val endX: String,
-    val endY: String,
+    val startX: Double,
+    val startY: Double,
+    val endX: Double,
+    val endY: Double,
     val reqCoordType: String = "WGS84GEO",
-    val resCoordType: String = "EPSG3857",
+    val resCoordType: String = "WGS84GEO",
     val startName: String,
     val endName: String
 )
@@ -22,7 +22,7 @@ data class RouteFeature(
 
 data class Geometry(
     val type: String,
-    val coordinates: List<List<Double>>
+    val coordinates: Any
 )
 
 data class Properties(

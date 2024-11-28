@@ -121,7 +121,7 @@ class MainFragment : Fragment(){
     private fun navigateToMapFragment() {
         if (selectedPOI != null) {
             val bundle = Bundle().apply {
-                putSerializable("selectedPOI", selectedPOI) // Serializable로 데이터 전달
+                putParcelable("selectedPOI", selectedPOI) // Serializable로 데이터 전달
             }
             findNavController().navigate(R.id.action_mainFragment_to_mapFragment, bundle)
         } else {

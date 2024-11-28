@@ -22,7 +22,7 @@ interface TMapService {
     @POST("tmap/routes/pedestrian")
     fun findPedestrianRoute(
         @Query("version") version: Int = 1,
-//        @Query("format") format: String = "json",
+        @Query("format") format: String = "json",
         @Query("appKey") appKey: String,
         @Body requestBody: PedestrianRouteRequest
     ): Call<PedestrianRouteResponse>

@@ -1,6 +1,6 @@
 package com.example.onthelamp
 
-import android.graphics.BitmapFactory
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,14 +8,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
-import com.example.onthelamp.BuildConfig
 import com.example.onthelamp.data.model.PedestrianRouteRequest
 import com.example.onthelamp.data.model.PedestrianRouteResponse
 import com.skt.tmap.TMapPoint
-
-
 import com.skt.tmap.TMapView
-import com.skt.tmap.overlay.TMapMarkerItem
 import com.skt.tmap.overlay.TMapPolyLine
 import retrofit2.Call
 import java.net.URLEncoder
@@ -37,33 +33,33 @@ class MapFragment : Fragment() {
         tMapView.setSKTMapApiKey(BuildConfig.TMAP_API_KEY)
         tmapViewContainer.addView(tMapView)
 
-        // TMapView 초기화 완료 시 작업 수행
-        tMapView.setOnMapReadyListener {
-            Log.d("MapFragment", "TMapView initialized successfully")
-//            addMarker(POI("서울시청", 37.5662952, 126.97794509999999, "서울", "중구", "태평로1가"))
+        // 전달된 데이터 받기
+        val selectedPOI = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arguments?.getParcelable("selectedPOI", POI::class.java)
+        } else {
+            arguments?.getParcelable("selectedPOI")
         }
 
 
-        // 전달된 데이터 받기
-        val selectedPOI = arguments?.getSerializable("selectedPOI") as? POI
         selectedPOI?.let {
             Log.d("MapFragment", "Received POI: ${it.name}, Lat: ${it.frontLat}, Lon: ${it.frontLon}")
 
-            //TODO:  현재 위치 (임의 설정) GPS로 변경
-            val startLat = 37.566477
-            val startLon = 126.985022
+            //TODO:  현재 위치 (임의 설정) GPS로 변경 필요
+            val startLat = 37.57592543
+            val startLon = 126.98415913
 
             // 최단 경로 탐색
-            searchRoute(startLat.toString(), startLon.toString(), it.frontLat.toString(), it.frontLon.toString())
+            searchRoute( startLon, startLat, it.frontLon!!, it.frontLat!!)
         }
 
 
         return view
     }
 
-    private fun searchRoute(startX: String, startY: String, endX: String, endY: String) {
-        val startName = URLEncoder.encode("출발지", "UTF-8") // 출발지 이름 URL 인코딩
-        val endName = URLEncoder.encode("목적지", "UTF-8")   // 목적지 이름 URL 인코딩
+
+    private fun searchRoute(startX: Double, startY: Double, endX: Double, endY: Double) {
+        val startName = URLEncoder.encode("출발지", "UTF-8")
+        val endName = URLEncoder.encode("목적지", "UTF-8")
 
         val request = PedestrianRouteRequest(
             startX = startX,
@@ -74,6 +70,8 @@ class MapFragment : Fragment() {
             endName = endName
         )
 
+        Log.d("MapFragment", "Request: $request")
+
         apiService.findPedestrianRoute(
             appKey = BuildConfig.TMAP_API_KEY,
             requestBody = request
@@ -82,61 +80,71 @@ class MapFragment : Fragment() {
                 call: Call<PedestrianRouteResponse>,
                 response: retrofit2.Response<PedestrianRouteResponse>
             ) {
+
                 if (response.isSuccessful) {
                     val routeResponse = response.body()
                     val points = mutableListOf<TMapPoint>()
 
-                    // 좌표 추출
                     routeResponse?.features?.forEach { feature ->
-                        if (feature.geometry.type == "LineString") {
-                            feature.geometry.coordinates.forEach { coord ->
-                                val latLng = TMapPoint(coord[1], coord[0])
-                                points.add(latLng)
+                        when (feature.geometry.type) {
+                            "LineString" -> {
+                                val coordinates = feature.geometry.coordinates
+                                if (coordinates is List<*>) {
+                                    coordinates.forEach { coord ->
+                                        if (coord is List<*> && coord.size >= 2) {
+                                            val latitude = coord[0] as Double
+                                            val longitude = coord[1] as Double
+                                            val lngLat = TMapPoint(longitude, latitude)
+                                            points.add(lngLat)
+                                        }
+                                    }
+                                }
+                            }
+                            "Point" -> {
+                                val coordinates = feature.geometry.coordinates
+                                if (coordinates is List<*> && coordinates.size == 2) {
+                                    val latitude = coordinates[0] as Double
+                                    val longitude = coordinates[1] as Double
+                                    val lngLat = TMapPoint(longitude, latitude)
+                                    points.add(lngLat)
+                                }
+                            }
+                            else -> {
+                                Log.e("MapFragment", "Unknown geometry type: ${feature.geometry.type}")
                             }
                         }
                     }
 
-                    Log.d("MapFragment", "Route points: $points")
-                    Log.d("MapFragment", "Request: $request")
-
-                    // 지도에 경로 표시
                     drawRoute(points)
                 } else {
-                    Log.d("MapFragment", "Response: $response")
                     Log.e("MapFragment", "API 호출 실패: ${response.code()}")
                 }
             }
 
             override fun onFailure(call: Call<PedestrianRouteResponse>, t: Throwable) {
-                Log.d("MapFragment", "Request: $request")
                 Log.e("MapFragment", "API 호출 실패: ${t.message}")
             }
         })
     }
 
     private fun drawRoute(points: List<TMapPoint>) {
-        val polyline = TMapPolyLine().apply {
-            lineColor = android.graphics.Color.BLUE // 경로 색상 설정
-            lineWidth = 5f // 경로 두께 설정
+        val pointList = ArrayList(points)
+
+        // TMapPolyLine 객체 생성
+        val polyLine = TMapPolyLine("routeLine",pointList).apply {
+            // 색상 및 두께 설정 (선택)
+            lineColor = android.graphics.Color.BLUE
+            lineWidth = 2f
         }
 
-        polyline.setID("Line123") // Polyline 식별자 설정
 
-        points.forEach { point ->
-            polyline.addLinePoint(point) // 좌표를 경로에 추가
+        // TMapView에 PolyLine 추가
+        tMapView.addTMapPolyLine(polyLine)
+
+        // 지도 중심을 경로의 첫 번째 포인트로 설정
+        if (points.isNotEmpty()) {
+            tMapView.setCenterPoint(points.first().latitude, points.first().longitude, true)
         }
-
-        // 지도에 Polyline 추가
-        tMapView.addTMapPolyLine(polyline)
-
-        tMapView.setCenterPoint(points.first().longitude, points.first().latitude, true)
-
-//        if (points.isNotEmpty()) {
-//            tMapView.setCenterPoint(points.first().longitude, points.first().latitude, true)
-//        }
     }
-
-
-
 }
 
