@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.RadioGroup
 import androidx.fragment.app.Fragment
 import com.example.onthelamp.data.model.PedestrianRouteRequest
 import com.example.onthelamp.data.model.PedestrianRouteResponse
@@ -48,8 +49,21 @@ class MapFragment : Fragment() {
             val startLat = 37.57592543
             val startLon = 126.98415913
 
-            // 최단 경로 탐색
-            searchRoute( startLon, startLat, it.frontLon!!, it.frontLat!!)
+            // RadioGroup 버튼 클릭 처리
+            val riskRadioGroup = view.findViewById<RadioGroup>(R.id.riskRadioGroup)
+            riskRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+                when (checkedId) {
+                    R.id.highRisk -> { // "최단" 버튼
+                        Log.d("MapFragment", "최단 경로 버튼 선택됨")
+                        searchRoute(startLon, startLat, it.frontLon!!, it.frontLat!!)
+                    }
+                    R.id.lowRisk -> { // "안전" 버튼
+                        Log.d("MapFragment", "안전 경로 버튼 선택됨 (아직 구현되지 않음)")
+                        // TODO: 안전 경로 탐색 로직 추가 예정
+                    }
+                }
+            }
+
         }
 
 
@@ -144,6 +158,7 @@ class MapFragment : Fragment() {
         // 지도 중심을 경로의 첫 번째 포인트로 설정
         if (points.isNotEmpty()) {
             tMapView.setCenterPoint(points.first().latitude, points.first().longitude, true)
+            tMapView.zoomLevel = 14
         }
     }
 }
