@@ -79,6 +79,8 @@ class NavigationFragment : Fragment() {
             setLeftButtonAction {
                 materialRadioDialog()
             }
+
+            updateRightButtonText("사진 분석")
         }
 
         mainActivity?.setRightButtonColor(R.color.button_green)
