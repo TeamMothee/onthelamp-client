@@ -175,10 +175,10 @@ class NavigationFragment : Fragment() {
     }
 
     private fun materialRadioDialog() {
-        val singleItems = arrayOf("banana", "apple", "watermelon")
+        val singleItems = arrayOf("점자블록", "볼라드", "음향신호기")
         var checkedItem = 0
 
-        MaterialAlertDialogBuilder(requireContext())
+        MaterialAlertDialogBuilder(requireContext(),R.style.CustomDialog)
             .setTitle("Choose what you like")
             .setNeutralButton("cancel") { dialog, which ->
                 // Respond to neutral button press
