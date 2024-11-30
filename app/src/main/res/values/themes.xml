@@ -8,4 +8,11 @@
     </style>
 
     <style name="Theme.OnTheLamp" parent="Base.Theme.OnTheLamp" />
+
+    <style name="CustomDialog" parent="ThemeOverlay.MaterialComponents.Dialog">
+<!--        <item name="android:background">#3A393D</item>-->
+<!--        <item name="android:windowBackground">@android:color/transparent</item>-->
+<!--        <item name="android:windowIsFloating">true</item>-->
+<!--        <item name="android:windowDimAmount">0.5</item> &lt;!&ndash; 배경 흐림 정도 &ndash;&gt;-->
+    </style>
 </resources>
