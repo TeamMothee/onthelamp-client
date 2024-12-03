@@ -121,7 +121,7 @@ class MapFragment : Fragment() {
 
     private fun navigateToNavFragment() {
         if (routePoints.isNotEmpty()) {
-            // points를 JSON으로 변환
+//             points를 JSON으로 변환
             val gson = Gson()
             val pointsJson = gson.toJson(routePoints)
 
@@ -138,7 +138,8 @@ class MapFragment : Fragment() {
             onLocationReceived = { latitude, longitude ->
                 Log.d("MainActivity", "Single Location: Lat=$latitude, Lon=$longitude")
                 onLocationReceived(latitude, longitude)
-            },
+            }
+            ,
             onPermissionDenied = {
                 requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }

@@ -83,10 +83,10 @@ class NavigationFragment : Fragment() {
             val type = object : TypeToken<List<TMapPoint>>() {}.type
             points = gson.fromJson(it, type)
 
-//            // points 데이터 활용
-//            points.forEach { point ->
-//                Log.d("NavFragment", "Point: ${point.latitude}, ${point.longitude}")
-//            }
+            // points 데이터 활용
+            points.forEach { point ->
+                Log.d("NavFragment", "Point: ${point.latitude}, ${point.longitude}")
+            }
         }
 
         realTimeLocationUtil = RealTimeLocationUtil(requireContext())
@@ -266,31 +266,49 @@ class NavigationFragment : Fragment() {
     }
 
     private fun calculateTurnType(currentLat: Double, currentLon: Double, points: List<TMapPoint>): String {
-        if (points.size < 2) return "종료" // 다음 포인트가 없는 경우 종료
+        if (points.size < 2) return "종료" // 유효한 포인트가 없으면 종료
 
+        // 현재 위치에서 가장 가까운 포인트의 인덱스를 찾음
         val nextPoint = findNextPoint(currentLat, currentLon, points) ?: return "종료"
         val nextPointIndex = points.indexOf(nextPoint)
 
-        if (nextPointIndex >= points.size - 1) return "종료" // 더 이상 포인트가 없는 경우 종료
+        if (nextPointIndex >= points.size - 1) return "종료" // 남은 포인트가 충분하지 않으면 종료
 
-        // 다음 포인트와 그다음 포인트 간의 방향
-        val currentToNextBearing = calculateBearing(currentLat, currentLon, nextPoint.latitude, nextPoint.longitude)
-        val nextToNextBearing = calculateBearing(
-            nextPoint.latitude,
-            nextPoint.longitude,
-            points[nextPointIndex + 1].latitude,
-            points[nextPointIndex + 1].longitude
-        )
+        // 최소 10개 포인트를 확인하도록 범위를 제한
+        val rangeEndIndex = minOf(nextPointIndex + 10, points.size - 1) // 최대 10개까지만 확인
+        val rangePoints = points.subList(nextPointIndex, rangeEndIndex + 1)
 
-        // 두 방향의 차이 계산
-        val turnAngle = (nextToNextBearing - currentToNextBearing + 360) % 360
+        // 현재 위치에서 첫 번째 포인트까지의 방향
+        val currentToNextBearing = calculateBearing(currentLat, currentLon, rangePoints.first().latitude, rangePoints.first().longitude)
+
+        // 다음 10개 포인트의 방향 변화 평균 계산
+        val bearings = mutableListOf<Float>()
+        for (i in 0 until rangePoints.size - 1) {
+            val currentBearing = calculateBearing(
+                rangePoints[i].latitude,
+                rangePoints[i].longitude,
+                rangePoints[i + 1].latitude,
+                rangePoints[i + 1].longitude
+            )
+            bearings.add(currentBearing)
+        }
+
+        // 평균 방향 계산
+        val averageBearing = bearings.average().toFloat()
+
+        // 방향 변화 계산
+        val turnAngle = (averageBearing - currentToNextBearing + 360) % 360
+
+        // 로그 출력
+        Log.d("CalculateTurnType", "평균 방향: $averageBearing, 현재 방향: $currentToNextBearing, 변화 각도: $turnAngle")
 
         return when {
-            turnAngle > 45 && turnAngle <= 135 -> "우회전" // 45° ~ 135°: 우회전
-            turnAngle >= 225 && turnAngle < 315 -> "좌회전" // 225° ~ 315°: 좌회전
+            turnAngle > 60 && turnAngle <= 120 -> "우회전" // 60° ~ 120°: 명확한 우회전
+            turnAngle >= 240 && turnAngle < 300 -> "좌회전" // 240° ~ 300°: 명확한 좌회전
             else -> "직진" // 나머지 경우: 직진
         }
     }
+
 
 
     private fun updateArrowBasedOnTurn(currentLat: Double, currentLon: Double) {
@@ -305,6 +323,6 @@ class NavigationFragment : Fragment() {
         }
 
         arrowView?.setImageResource(arrowResource) // 화살표 이미지 변경
-        Log.d("NavigationFragment", "현재 방향: $turnType, 선택된 이미지: $arrowResource")
+        Log.d("NavigationFragment", "현재 방향: $turnType")
     }
 }
