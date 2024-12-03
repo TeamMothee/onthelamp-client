@@ -55,6 +55,7 @@ class ImageCaptioningFragment() : Fragment() {
 
             updateRightButtonText("안내 복귀")
         }
+
         ttsHelper = TTSHelper(requireContext())
 
         captionedText = view.findViewById(R.id.captioned_text)
@@ -94,6 +95,7 @@ class ImageCaptioningFragment() : Fragment() {
     }
 
     private fun updateCaptionText(newText: String) {
+        ttsHelper.speak(newText)
         captionedText.text = newText
     }
 
