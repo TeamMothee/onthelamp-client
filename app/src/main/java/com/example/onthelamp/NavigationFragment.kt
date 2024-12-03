@@ -365,8 +365,12 @@ class NavigationFragment : Fragment() {
             println("Bounding Box: ${result.boundingBox.joinToString()}")
         }
         if(checkAlert){
+            //TTS : 차량이 앞에 있습니다. 주의하세요.
             view?.findViewById<View>(R.id.alertView)?.visibility = View.VISIBLE
             checkAlert=false
+        }
+        else{
+            view?.findViewById<View>(R.id.alertView)?.visibility = View.GONE
         }
     }
 
