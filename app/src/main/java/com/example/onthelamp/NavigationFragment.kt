@@ -83,10 +83,10 @@ class NavigationFragment : Fragment() {
             val type = object : TypeToken<List<TMapPoint>>() {}.type
             points = gson.fromJson(it, type)
 
-            // points 데이터 활용
-            points.forEach { point ->
-                Log.d("NavFragment", "Point: ${point.latitude}, ${point.longitude}")
-            }
+//            // points 데이터 활용
+//            points.forEach { point ->
+//                Log.d("NavFragment", "Point: ${point.latitude}, ${point.longitude}")
+//            }
         }
 
         realTimeLocationUtil = RealTimeLocationUtil(requireContext())
@@ -94,7 +94,7 @@ class NavigationFragment : Fragment() {
         realTimeLocationUtil.startRealTimeLocationUpdates(
             onLocationUpdate = { latitude, longitude ->
                 Log.d("NavigationFragment", "현재 위치: Lat=$latitude, Lon=$longitude")
-                updateDirection(latitude, longitude) // 방향 업데이트
+                updateArrowBasedOnTurn(latitude, longitude) // 방향 업데이트
             },
             onPermissionDenied = {
                 Toast.makeText(requireContext(), "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
@@ -265,18 +265,46 @@ class NavigationFragment : Fragment() {
         return ((Math.toDegrees(atan2(y, x)) + 360) % 360).toFloat()
     }
 
-    // 화살표 UI 업데이트
-    private fun updateArrowDirection(bearing: Float) {
-        val arrowView = view?.findViewById<ImageView>(R.id.arrowView)
-        arrowView?.rotation = bearing
+    private fun calculateTurnType(currentLat: Double, currentLon: Double, points: List<TMapPoint>): String {
+        if (points.size < 2) return "종료" // 다음 포인트가 없는 경우 종료
+
+        val nextPoint = findNextPoint(currentLat, currentLon, points) ?: return "종료"
+        val nextPointIndex = points.indexOf(nextPoint)
+
+        if (nextPointIndex >= points.size - 1) return "종료" // 더 이상 포인트가 없는 경우 종료
+
+        // 다음 포인트와 그다음 포인트 간의 방향
+        val currentToNextBearing = calculateBearing(currentLat, currentLon, nextPoint.latitude, nextPoint.longitude)
+        val nextToNextBearing = calculateBearing(
+            nextPoint.latitude,
+            nextPoint.longitude,
+            points[nextPointIndex + 1].latitude,
+            points[nextPointIndex + 1].longitude
+        )
+
+        // 두 방향의 차이 계산
+        val turnAngle = (nextToNextBearing - currentToNextBearing + 360) % 360
+
+        return when {
+            turnAngle > 45 && turnAngle <= 135 -> "우회전" // 45° ~ 135°: 우회전
+            turnAngle >= 225 && turnAngle < 315 -> "좌회전" // 225° ~ 315°: 좌회전
+            else -> "직진" // 나머지 경우: 직진
+        }
     }
 
-    // 방향 업데이트 연결
-    private fun updateDirection(currentLat: Double, currentLon: Double) {
-        val nextPoint = findNextPoint(currentLat, currentLon, points)
-        nextPoint?.let { point ->
-            val bearing = calculateBearing(currentLat, currentLon, point.latitude, point.longitude)
-            updateArrowDirection(bearing) // 화살표 업데이트
-        } ?: Log.d("NavigationFragment", "다음 포인트를 찾을 수 없습니다.")
+
+    private fun updateArrowBasedOnTurn(currentLat: Double, currentLon: Double) {
+        val turnType = calculateTurnType(currentLat, currentLon, points)
+
+        val arrowView = view?.findViewById<ImageView>(R.id.arrowView)
+        val arrowResource = when (turnType) {
+            "직진" -> R.drawable.arrow       // 직진 화살표 이미지
+            "좌회전" -> R.drawable.left_arrow // 좌회전 화살표 이미지
+            "우회전" -> R.drawable.right_arrow // 우회전 화살표 이미지
+            else -> R.drawable.arrow         // 기본값 (직진 화살표)
+        }
+
+        arrowView?.setImageResource(arrowResource) // 화살표 이미지 변경
+        Log.d("NavigationFragment", "현재 방향: $turnType, 선택된 이미지: $arrowResource")
     }
 }
