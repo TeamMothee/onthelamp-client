@@ -123,20 +123,20 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
     }
 
     private fun handleSpeechResultForSelection(recognizedText: String, topPois: List<POI>) {
+        Log.d("handleSpeechResultForSelection", "인식된 텍스트: $recognizedText")
         val index = when (recognizedText.trim()) {
-            "일", "1" -> 0
-            "이", "2" -> 1
-            "삼", "3" -> 2
-            "사", "4" -> 3
+            "일번", "1번" -> 0
+            "이번", "2번" -> 1
+            "삼번", "3번" -> 2
+            "사번", "4번" -> 3
             else -> -1
         }
 
         if (index in topPois.indices) {
-            val selectedPOI = topPois[index]
-            handlePOISelection(selectedPOI)
-            Toast.makeText(requireContext(), "선택된 위치: ${selectedPOI.name}", Toast.LENGTH_SHORT).show()
+            selectedPOI = topPois[index]
+            navigateToMapFragment()
         } else {
-            Toast.makeText(requireContext(), "올바른 선택이 아닙니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
+            ttsHelper.speak("올바른 선택이 아닙니다. 다시 시도해주세요.")
         }
     }
 
@@ -151,7 +151,6 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
         speechRecognizerHelper = SpeechRecognizerHelper(requireContext()) { recognizedText ->
             handleSpeechResultForSelection(recognizedText, topPois)
         }
-        speechRecognizerHelper.startListening()
     }
 
 
@@ -251,7 +250,6 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
     }
 
     private fun updatePOIList(topPois: List<POI>) {
-        // TTS로 선택지 읽어주기
 
         val poiAdapter = POIAdapter(topPois) { selectedItem ->
             // 아이템 클릭 이벤트 처리
@@ -285,7 +283,6 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
     }
 
     private fun updatePOIListSTT(topPois: List<POI>) {
-        // TTS로 선택지 읽어주기
 
         val poiAdapter = POIAdapter(topPois) { selectedItem ->
             // 아이템 클릭 이벤트 처리

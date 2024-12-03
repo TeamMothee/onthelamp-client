@@ -2,6 +2,8 @@ package com.example.onthelamp
 
 import RealTimeLocationUtil
 import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 
 import android.os.Build
 import android.os.Bundle
@@ -14,11 +16,14 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.onthelamp.data.model.PedestrianRouteRequest
 import com.example.onthelamp.data.model.PedestrianRouteResponse
+import com.example.onthelamp.utils.SpeechRecognizerHelper
+import com.example.onthelamp.utils.TTSHelper
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.gson.Gson
@@ -28,7 +33,7 @@ import com.skt.tmap.overlay.TMapPolyLine
 import retrofit2.Call
 import java.net.URLEncoder
 
-class MapFragment : Fragment() {
+class MapFragment : Fragment(), OnMicButtonClickListener {
     private lateinit var tMapView: TMapView
     private val apiService = TMapRetrofitClient.getInstance().create(TMapService::class.java)
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -36,6 +41,9 @@ class MapFragment : Fragment() {
     private lateinit var realTimeLocationUtil: RealTimeLocationUtil
 
     private var routePoints: List<TMapPoint> = emptyList()
+
+    private lateinit var ttsHelper: TTSHelper
+    private lateinit var speechRecognizerHelper: SpeechRecognizerHelper
 
     // 권한 요청 런처
     private val requestPermissionLauncher = registerForActivityResult(
@@ -62,6 +70,7 @@ class MapFragment : Fragment() {
         tMapView.setSKTMapApiKey(BuildConfig.TMAP_API_KEY)
         tmapViewContainer.addView(tMapView)
 
+        ttsHelper = TTSHelper(requireContext())
         // 전달된 데이터 받기
         val selectedPOI = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arguments?.getParcelable("selectedPOI", POI::class.java)
@@ -76,6 +85,8 @@ class MapFragment : Fragment() {
         fetchSingleLocation(onLocationReceived = { latitude, longitude ->
             Log.d("MapFragment", "Current Location: Lat=$latitude, Lon=$longitude")
             selectedPOI?.let {
+                promptUserToSelectOption()
+
                 Log.d("MapFragment", "Received POI: ${it.name}, Lat: ${it.frontLat}, Lon: ${it.frontLon}")
 
                 // TextView에 POI 이름 설정
@@ -119,6 +130,111 @@ class MapFragment : Fragment() {
 
         return view
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        ttsHelper.destroy()
+    }
+
+    private fun calculateRoute(isSafeRoute: Boolean) {
+        val selectedPOI = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arguments?.getParcelable("selectedPOI", POI::class.java)
+        } else {
+            arguments?.getParcelable("selectedPOI")
+        }
+
+        fetchSingleLocation { latitude, longitude ->
+            if (selectedPOI != null) {
+                if (isSafeRoute) {
+                    Log.d("MapFragment", "안전 경로 계산 시작")
+                    // 안전 경로 계산 로직 추가
+                    // TODO: 안전 경로 API 연결 필요
+                    searchRoute(longitude, latitude, selectedPOI.frontLon!!, selectedPOI.frontLat!!)
+                } else {
+                    Log.d("MapFragment", "최단 경로 계산 시작")
+                    searchRoute(longitude, latitude, selectedPOI.frontLon!!, selectedPOI.frontLat!!)
+                }
+
+                // 안내 시작 버튼과 동일한 동작
+                navigateToNavFragment()
+            } else {
+                Toast.makeText(requireContext(), "목적지를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+
+    private fun promptUserToSelectOption() {
+        ttsHelper.speak("경로를 찾았습니다, 안전 경로 또는 최단 경로를 선택하세요.")
+
+        // STT로 안전, 최단 선택
+        speechRecognizerHelper = SpeechRecognizerHelper(requireContext()) { recognizedText ->
+            when {
+                recognizedText.contains("안전") -> {
+                    ttsHelper.speak("안전 경로를 선택하셨습니다. 안내를 시작합니다.")
+                    calculateRoute(isSafeRoute = true)
+                }
+                recognizedText.contains("최단") -> {
+                    ttsHelper.speak("최단 경로를 선택하셨습니다. 안내를 시작합니다.")
+                    calculateRoute(isSafeRoute = false)
+                }
+                else -> {
+                    ttsHelper.speak("잘못된 선택입니다. 안전 경로 또는 최단 경로 중에서 선택해주세요.")
+                }
+            }
+        }
+    }
+
+    // 음성 퍼미션 체크
+    private fun checkRecordAudioPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    // 퍼미션 요청
+    private fun requestRecordAudioPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestSTTPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    // ActivityResultLauncher for Permission Request
+    private val requestSTTPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                Toast.makeText(requireContext(), "권한이 허용되었습니다.", Toast.LENGTH_SHORT).show()
+                speechRecognizerHelper.startListening()
+            } else {
+                Toast.makeText(requireContext(), "권한이 거부되었습니다. STT를 사용할 수 없습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    override fun onMicButtonPressed() {
+        // 퍼미션 체크 후 STT 시작
+        if (checkRecordAudioPermission()) {
+            speechRecognizerHelper.startListening()
+        } else {
+            requestRecordAudioPermission()
+        }
+    }
+
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is MainActivity) {
+            context.micButtonClickListener = this
+        }
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        if (requireActivity() is MainActivity) {
+            (requireActivity() as MainActivity).micButtonClickListener = null
+        }
+    }
+
 
     private fun navigateToNavFragment() {
         if (routePoints.isNotEmpty()) {
