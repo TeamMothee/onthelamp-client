@@ -125,10 +125,10 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
     private fun handleSpeechResultForSelection(recognizedText: String, topPois: List<POI>) {
         Log.d("handleSpeechResultForSelection", "인식된 텍스트: $recognizedText")
         val index = when (recognizedText.trim()) {
-            "일번", "1번" -> 0
-            "이번", "2번" -> 1
-            "삼번", "3번" -> 2
-            "사번", "4번" -> 3
+            "일번", "일본", "1번" -> 0
+            "이번", "이본", "2번" -> 1
+            "삼번", "산본", "산번", "3번" -> 2
+            "사번", "사본", "4번" -> 3
             else -> -1
         }
 

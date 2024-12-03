@@ -171,12 +171,16 @@ class MapFragment : Fragment(), OnMicButtonClickListener {
         speechRecognizerHelper = SpeechRecognizerHelper(requireContext()) { recognizedText ->
             when {
                 recognizedText.contains("안전") -> {
-                    ttsHelper.speak("안전 경로를 선택하셨습니다. 안내를 시작합니다.")
-                    calculateRoute(isSafeRoute = true)
+//                    ttsHelper.speak("안전 경로를 선택하셨습니다. 안내를 시작합니다.")
+                    ttsHelper.speakWithCallback("안전 경로를 선택하셨습니다. 안내를 시작합니다."){
+                        calculateRoute(isSafeRoute = true)
+                    }
                 }
                 recognizedText.contains("최단") -> {
-                    ttsHelper.speak("최단 경로를 선택하셨습니다. 안내를 시작합니다.")
-                    calculateRoute(isSafeRoute = false)
+//                    ttsHelper.speak("최단 경로를 선택하셨습니다. 안내를 시작합니다.")
+                    ttsHelper.speakWithCallback("최단 경로를 선택하셨습니다. 안내를 시작합니다."){
+                        calculateRoute(isSafeRoute = false)
+                    }
                 }
                 else -> {
                     ttsHelper.speak("잘못된 선택입니다. 안전 경로 또는 최단 경로 중에서 선택해주세요.")
