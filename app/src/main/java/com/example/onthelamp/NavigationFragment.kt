@@ -30,6 +30,7 @@ import android.widget.ImageView
 import androidx.camera.core.*
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.example.onthelamp.utils.TTSHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -89,6 +90,9 @@ class NavigationFragment : Fragment() {
     lateinit var captureButton: Button
     private lateinit var objectDetector: TFLiteObjectDetector
 
+    // 이전 방향
+    private var lastTurnType: String? = null
+
     private var job: Job? = null
 
     var checkAlert: Boolean = false
@@ -96,6 +100,8 @@ class NavigationFragment : Fragment() {
     private var points: List<TMapPoint> = emptyList()
 
     private lateinit var realTimeLocationUtil: RealTimeLocationUtil
+
+    private lateinit var ttsHelper: TTSHelper
 
     companion object {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 101
@@ -119,6 +125,8 @@ class NavigationFragment : Fragment() {
 //        mainActivity?.rightButton?.setOnClickListener{
 //            takePhoto()
 //        }
+
+        ttsHelper = TTSHelper(requireContext())
 
         // 방향 view
 
@@ -365,8 +373,11 @@ class NavigationFragment : Fragment() {
             println("Bounding Box: ${result.boundingBox.joinToString()}")
         }
         if(checkAlert){
+            ttsHelper.speak("차량이 앞에 있습니다. 주의하세요.")
             view?.findViewById<View>(R.id.alertView)?.visibility = View.VISIBLE
             checkAlert=false
+        } else{
+            view?.findViewById<View>(R.id.alertView)?.visibility = View.GONE
         }
     }
 
@@ -452,7 +463,6 @@ class NavigationFragment : Fragment() {
     }
 
 
-
     private fun updateArrowBasedOnTurn(currentLat: Double, currentLon: Double) {
         val turnType = calculateTurnType(currentLat, currentLon, points)
 
@@ -462,6 +472,22 @@ class NavigationFragment : Fragment() {
             "좌회전" -> R.drawable.left_arrow // 좌회전 화살표 이미지
             "우회전" -> R.drawable.right_arrow // 우회전 화살표 이미지
             else -> R.drawable.arrow         // 기본값 (직진 화살표)
+        }
+
+        if (turnType != lastTurnType) {
+            val ttsMessage = when (turnType) {
+                "직진" -> "앞으로 직진하세요."
+                "좌회전" -> "잠시 후 왼쪽으로 회전하세요."
+                "우회전" -> "잠시 후 오른쪽으로 회전하세요."
+                else -> null
+            }
+
+            ttsMessage?.let {
+                ttsHelper.speak(it) // TTS 메시지 출력
+            }
+
+            // 마지막 방향 업데이트
+            lastTurnType = turnType
         }
 
         arrowView?.setImageResource(arrowResource) // 화살표 이미지 변경

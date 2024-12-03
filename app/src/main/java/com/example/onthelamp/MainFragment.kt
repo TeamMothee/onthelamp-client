@@ -125,10 +125,10 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
     private fun handleSpeechResultForSelection(recognizedText: String, topPois: List<POI>) {
         Log.d("handleSpeechResultForSelection", "인식된 텍스트: $recognizedText")
         val index = when (recognizedText.trim()) {
-            "일번", "1번" -> 0
-            "이번", "2번" -> 1
-            "삼번", "3번" -> 2
-            "사번", "4번" -> 3
+            "일번", "일본", "1번" -> 0
+            "이번", "이본", "2번" -> 1
+            "삼번", "산본", "산번", "3번" -> 2
+            "사번", "사본", "4번" -> 3
             else -> -1
         }
 
@@ -279,6 +279,10 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
         outsideTouchView?.setOnClickListener {
             recyclerView?.visibility = View.GONE
             outsideTouchView.visibility = View.GONE
+            ttsHelper.speak("목록을 닫았습니다. 새로 선택하려면 다시 말씀해주세요.")
+            speechRecognizerHelper = SpeechRecognizerHelper(requireContext()) { recognizedText ->
+                handleSpeechResult(recognizedText)
+            }
         }
     }
 
@@ -312,6 +316,10 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
         outsideTouchView?.setOnClickListener {
             recyclerView?.visibility = View.GONE
             outsideTouchView.visibility = View.GONE
+            ttsHelper.speak("목록을 닫았습니다. 새로 선택하려면 다시 말씀해주세요.")
+            speechRecognizerHelper = SpeechRecognizerHelper(requireContext()) { recognizedText ->
+                handleSpeechResult(recognizedText)
+            }
         }
 
         // TTS로 선택지 읽고 선택받기
@@ -337,7 +345,7 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
                         updatePOIList(topPois)
                     } else {
 //                        TODO: 큰 dialog로 수정
-                        Toast.makeText(requireContext(), "검색 결과가 없습니다. 다시 마이크로 말씀해주세요.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "검색 결과가 없습니다", Toast.LENGTH_SHORT).show()
                     }
                 } else {
 //                    TODO: Toast 메세지 수정
@@ -370,7 +378,7 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
                         updatePOIListSTT(topPois)
                     } else {
 //                        TODO: 큰 dialog로 수정
-                        Toast.makeText(requireContext(), "검색 결과가 없습니다", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "검색 결과가 없습니다. 다시 마이크로 말씀해주세요.", Toast.LENGTH_SHORT).show()
                     }
                 } else {
 //                    TODO: Toast 메세지 수정
