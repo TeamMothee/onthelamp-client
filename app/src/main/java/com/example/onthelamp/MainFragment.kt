@@ -345,7 +345,7 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
                         updatePOIList(topPois)
                     } else {
 //                        TODO: 큰 dialog로 수정
-                        Toast.makeText(requireContext(), "검색 결과가 없습니다. 다시 마이크로 말씀해주세요.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "검색 결과가 없습니다", Toast.LENGTH_SHORT).show()
                     }
                 } else {
 //                    TODO: Toast 메세지 수정
@@ -378,7 +378,7 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
                         updatePOIListSTT(topPois)
                     } else {
 //                        TODO: 큰 dialog로 수정
-                        Toast.makeText(requireContext(), "검색 결과가 없습니다", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "검색 결과가 없습니다. 다시 마이크로 말씀해주세요.", Toast.LENGTH_SHORT).show()
                     }
                 } else {
 //                    TODO: Toast 메세지 수정

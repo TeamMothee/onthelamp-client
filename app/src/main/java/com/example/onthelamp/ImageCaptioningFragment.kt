@@ -14,6 +14,8 @@ import androidx.fragment.app.Fragment
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
@@ -32,6 +34,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 class ImageCaptioningFragment() : Fragment() {
 
     lateinit var captionedText : TextView
+
     private lateinit var ttsHelper: TTSHelper
 
     override fun onCreateView(
@@ -95,7 +98,14 @@ class ImageCaptioningFragment() : Fragment() {
     }
 
     private fun updateCaptionText(newText: String) {
-        ttsHelper.speak(newText)
+        if (ttsHelper.isInitialized) {
+            ttsHelper.speak(newText)
+        } else {
+            // 초기화가 완료되면 호출
+            Handler(Looper.getMainLooper()).postDelayed({
+                ttsHelper.speak(newText)
+            }, 800)
+        }
         captionedText.text = newText
     }
 

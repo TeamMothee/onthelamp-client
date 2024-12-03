@@ -9,7 +9,7 @@ import java.util.*
 
 class TTSHelper(private val context: Context) : TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
-    private var isInitialized = false
+    var isInitialized = false
 
     init {
         tts = TextToSpeech(context, this)
