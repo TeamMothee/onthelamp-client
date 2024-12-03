@@ -107,6 +107,11 @@ class MapFragment : Fragment() {
             }
         })
 
+        // MainActivity의 setRightButtonAction 호출
+        (requireActivity() as? MainActivity)?.setRightButtonAction {
+            findNavController().navigate(R.id.action_mapFragment_to_navigationFragment)
+        }
+
 
         return view
     }
