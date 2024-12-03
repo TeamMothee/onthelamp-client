@@ -3,6 +3,8 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("kotlin-parcelize")
+    id("androidx.navigation.safeargs.kotlin")
 }
 
 android {
@@ -102,6 +104,11 @@ dependencies {
 
     implementation("androidx.camera:camera-view:1.1.0-beta01")
     implementation("androidx.camera:camera-extensions:1.1.0-beta01")
+
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+
+    implementation ("com.google.code.gson:gson:2.8.9")
+
 
 //    implementation("androidx.navigation:navigation-safe-args-gradle-plugin:2.7.3")
 //

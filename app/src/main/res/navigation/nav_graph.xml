@@ -13,6 +13,9 @@
         <action
             android:id="@+id/action_navigationFragment_to_imageCaptioningFragment"
             app:destination="@id/imageCaptioningFragment" />
+        <argument
+            android:name="points"
+            app:argType="string" />
     </fragment>
     <fragment
         android:id="@+id/imageCaptioningFragment"
@@ -23,11 +26,30 @@
             android:name="imageUri"
             app:argType="string" />
     </fragment>
+
     <fragment
         android:id="@+id/mainFragment"
         android:name="com.example.onthelamp.MainFragment"
         android:label="MainFragment"
-        tools:layout="@layout/fragment_main"/>
+        tools:layout="@layout/fragment_main">
+        <action
+            android:id="@+id/action_mainFragment_to_mapFragment"
+            app:destination="@id/mapFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.example.onthelamp.MapFragment"
+        android:label="MapFragment"
+        tools:layout="@layout/fragment_map">
+        <action
+            android:id="@+id/action_mapFragment_to_mainFragment"
+            app:destination="@id/mainFragment" />
+        <action
+            android:id="@+id/action_mapFragment_to_navigationFragment"
+            app:destination="@id/navigationFragment" />
+    </fragment>
+
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.example.onthelamp.SettingsFragment"

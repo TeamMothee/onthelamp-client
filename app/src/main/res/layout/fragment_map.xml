@@ -32,23 +32,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- 출발지 입력 -->
-        <EditText
+    <!-- 목적지 입력 -->
+        <TextView
             android:id="@+id/startInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="출발지 입력"
             android:layout_marginLeft="16dp"
             android:layout_marginRight="16dp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
+            android:hint="목적지 입력"
             android:textColor="@android:color/white"
             android:textColorHint="@android:color/darker_gray"
             android:backgroundTint="@android:color/white"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:background="@null" />
+            android:background="@null"
+            android:gravity="center_vertical"
+            android:textSize="18sp"
+            />
     </LinearLayout>
 
     <TextView
@@ -65,7 +65,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <LinearLayout
+    <RadioGroup
         android:id="@+id/riskRadioGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -74,7 +74,7 @@
         app:layout_constraintTop_toBottomOf="@id/riskText"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:gravity="center" >
+        android:gravity="center">
 
         <!-- 안전 버튼 -->
         <RadioButton
@@ -83,13 +83,15 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="안전"
-            android:textSize="16sp"
+            android:textSize="24sp"
             android:paddingHorizontal="24dp"
             android:paddingVertical="12dp"
             android:background="@drawable/radio_button_background"
             android:button="@null"
             android:textColor="@color/radio_button_text_selector"
-            android:gravity="center" />
+            android:gravity="center"
+            android:layout_marginEnd="8dp"
+            android:checked="true" />
         <!-- 최단 버튼 -->
         <RadioButton
             android:id="@+id/highRisk"
@@ -97,15 +99,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="최단"
-            android:textSize="16sp"
+            android:textSize="24sp"
             android:paddingHorizontal="24dp"
             android:paddingVertical="12dp"
             android:background="@drawable/radio_button_background"
             android:button="@null"
             android:textColor="@color/radio_button_text_selector"
-            android:gravity="center" />
+            android:gravity="center"
+            android:layout_marginStart="8dp"/>
 
-    </LinearLayout>
+    </RadioGroup>
 
     <!-- FrameLayout with fixed height -->
     <FrameLayout

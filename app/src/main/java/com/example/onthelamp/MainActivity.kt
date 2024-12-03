@@ -43,6 +43,24 @@ class MainActivity : AppCompatActivity() {
 
         setupBottomNavMenu(navController)
 
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            when (destination.id) {
+                R.id.mainFragment -> { // MainFragment가 선택된 경우
+                    hideLeftButtonText()
+                    hideRightButtonText()
+                }
+                R.id.mapFragment -> { // MapFragment가 선택된 경우
+                    hideLeftButtonText()
+                    showRightButtonText()
+                    updateRightButtonText("안내 시작")
+                }
+                else -> { // 다른 Fragment가 선택된 경우
+                    showLeftButtonText()
+                    showRightButtonText()
+                }
+            }
+        }
+
 //        // 애플리케이션 실행 후 첫 화면 설정
 //        supportFragmentManager.beginTransaction().add(frame.id, MapFragment()).commit()
 //
@@ -92,11 +110,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun hideRightButtonText() {
-        rightButton.visibility = View.GONE
+        rightButton.visibility = View.INVISIBLE
     }
 
     fun hideLeftButtonText() {
-        leftButton.visibility = View.GONE
+        leftButton.visibility = View.INVISIBLE
     }
 
     fun showRightButtonText() {

@@ -14,6 +14,25 @@
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="0dp" />
 
+
+    <FrameLayout
+        android:id="@+id/arrowWrapper"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="16dp"
+        android:background="#000000">
+
+        <!-- 화살표 이미지 -->
+        <ImageView
+            android:id="@+id/arrowView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/arrow"
+            android:scaleType="centerInside" />
+    </FrameLayout>
+
     <View
         android:id="@+id/alertView"
         android:layout_width="match_parent"
