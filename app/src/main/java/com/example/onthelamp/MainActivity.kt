@@ -17,10 +17,16 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
+interface OnMicButtonClickListener {
+    fun onMicButtonPressed()
+}
+
 class MainActivity : AppCompatActivity() {
 
     lateinit var rightButton: Button;
     lateinit var leftButton: Button;
+
+    var micButtonClickListener: OnMicButtonClickListener? = null
 
 //    private val frame: FrameLayout by lazy { // activity_main의 화면 부분
 //        findViewById(R.id.frame_container)
@@ -40,6 +46,11 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment? ?: return
 
         val navController = host.navController
+
+        val recordButton = findViewById<Button>(R.id.record_button)
+        recordButton.setOnClickListener {
+            micButtonClickListener?.onMicButtonPressed()
+        }
 
         setupBottomNavMenu(navController)
 
@@ -140,5 +151,9 @@ class MainActivity : AppCompatActivity() {
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNav?.setupWithNavController(navController)
         // TODO END STEP 9.3
+    }
+
+    fun getRecordButton(): Button {
+        return findViewById(R.id.record_button)
     }
 }
