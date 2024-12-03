@@ -1,5 +1,6 @@
 package com.example.onthelamp
 
+import RealTimeLocationUtil
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -27,9 +28,16 @@ import android.widget.ImageView
 import androidx.camera.core.*
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.skt.tmap.TMapPoint
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 
 class NavigationFragment : Fragment() {
@@ -38,6 +46,10 @@ class NavigationFragment : Fragment() {
     private lateinit var cameraExecutor: ExecutorService
     private var imageCapture: ImageCapture? = null
     lateinit var captureButton: Button
+
+    private var points: List<TMapPoint> = emptyList()
+
+    private lateinit var realTimeLocationUtil: RealTimeLocationUtil
 
     companion object {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 101
@@ -61,6 +73,33 @@ class NavigationFragment : Fragment() {
 //        mainActivity?.rightButton?.setOnClickListener{
 //            takePhoto()
 //        }
+
+        // 방향 view
+
+        // 최단 거리 points
+        val pointsJson = arguments?.getString("points")
+        pointsJson?.let {
+            val gson = Gson()
+            val type = object : TypeToken<List<TMapPoint>>() {}.type
+            points = gson.fromJson(it, type)
+
+            // points 데이터 활용
+            points.forEach { point ->
+                Log.d("NavFragment", "Point: ${point.latitude}, ${point.longitude}")
+            }
+        }
+
+        realTimeLocationUtil = RealTimeLocationUtil(requireContext())
+
+        realTimeLocationUtil.startRealTimeLocationUpdates(
+            onLocationUpdate = { latitude, longitude ->
+                Log.d("NavigationFragment", "현재 위치: Lat=$latitude, Lon=$longitude")
+                updateArrowBasedOnTurn(latitude, longitude) // 방향 업데이트
+            },
+            onPermissionDenied = {
+                Toast.makeText(requireContext(), "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            }
+        )
 
         mainActivity?.apply{
             setRightButtonAction {
@@ -162,6 +201,7 @@ class NavigationFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         cameraExecutor.shutdown()
+        realTimeLocationUtil.stopRealTimeLocationUpdates()
     }
 
     override fun onRequestPermissionsResult(
@@ -193,5 +233,96 @@ class NavigationFragment : Fragment() {
                 checkedItem = which
             }
             .show()
+    }
+
+    // 다음 포인트 계산
+    private fun findNextPoint(currentLat: Double, currentLon: Double, points: List<TMapPoint>): TMapPoint? {
+        val distances = points.map { point ->
+            Pair(point, calculateDistance(currentLat, currentLon, point.latitude, point.longitude))
+        }
+        val sortedPoints = distances.sortedBy { it.second }
+        return sortedPoints.getOrNull(1)?.first // 가장 가까운 포인트 다음의 포인트
+    }
+
+    // 거리 계산 함수
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val earthRadius = 6371e3 // 지구 반지름 (미터 단위)
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLon / 2) * sin(dLon / 2)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return earthRadius * c
+    }
+
+    // 방향(각도) 계산
+    private fun calculateBearing(currentLat: Double, currentLon: Double, targetLat: Double, targetLon: Double): Float {
+        val dLon = Math.toRadians(targetLon - currentLon)
+        val y = sin(dLon) * cos(Math.toRadians(targetLat))
+        val x = cos(Math.toRadians(currentLat)) * sin(Math.toRadians(targetLat)) -
+                sin(Math.toRadians(currentLat)) * cos(Math.toRadians(targetLat)) * Math.cos(dLon)
+        return ((Math.toDegrees(atan2(y, x)) + 360) % 360).toFloat()
+    }
+
+    private fun calculateTurnType(currentLat: Double, currentLon: Double, points: List<TMapPoint>): String {
+        if (points.size < 2) return "종료" // 유효한 포인트가 없으면 종료
+
+        // 현재 위치에서 가장 가까운 포인트의 인덱스를 찾음
+        val nextPoint = findNextPoint(currentLat, currentLon, points) ?: return "종료"
+        val nextPointIndex = points.indexOf(nextPoint)
+
+        if (nextPointIndex >= points.size - 1) return "종료" // 남은 포인트가 충분하지 않으면 종료
+
+        // 최소 10개 포인트를 확인하도록 범위를 제한
+        val rangeEndIndex = minOf(nextPointIndex + 10, points.size - 1) // 최대 10개까지만 확인
+        val rangePoints = points.subList(nextPointIndex, rangeEndIndex + 1)
+
+        // 현재 위치에서 첫 번째 포인트까지의 방향
+        val currentToNextBearing = calculateBearing(currentLat, currentLon, rangePoints.first().latitude, rangePoints.first().longitude)
+
+        // 다음 10개 포인트의 방향 변화 평균 계산
+        val bearings = mutableListOf<Float>()
+        for (i in 0 until rangePoints.size - 1) {
+            val currentBearing = calculateBearing(
+                rangePoints[i].latitude,
+                rangePoints[i].longitude,
+                rangePoints[i + 1].latitude,
+                rangePoints[i + 1].longitude
+            )
+            bearings.add(currentBearing)
+        }
+
+        // 평균 방향 계산
+        val averageBearing = bearings.average().toFloat()
+
+        // 방향 변화 계산
+        val turnAngle = (averageBearing - currentToNextBearing + 360) % 360
+
+        // 로그 출력
+        Log.d("CalculateTurnType", "평균 방향: $averageBearing, 현재 방향: $currentToNextBearing, 변화 각도: $turnAngle")
+
+        return when {
+            turnAngle > 60 && turnAngle <= 120 -> "우회전" // 60° ~ 120°: 명확한 우회전
+            turnAngle >= 240 && turnAngle < 300 -> "좌회전" // 240° ~ 300°: 명확한 좌회전
+            else -> "직진" // 나머지 경우: 직진
+        }
+    }
+
+
+
+    private fun updateArrowBasedOnTurn(currentLat: Double, currentLon: Double) {
+        val turnType = calculateTurnType(currentLat, currentLon, points)
+
+        val arrowView = view?.findViewById<ImageView>(R.id.arrowView)
+        val arrowResource = when (turnType) {
+            "직진" -> R.drawable.arrow       // 직진 화살표 이미지
+            "좌회전" -> R.drawable.left_arrow // 좌회전 화살표 이미지
+            "우회전" -> R.drawable.right_arrow // 우회전 화살표 이미지
+            else -> R.drawable.arrow         // 기본값 (직진 화살표)
+        }
+
+        arrowView?.setImageResource(arrowResource) // 화살표 이미지 변경
+        Log.d("NavigationFragment", "현재 방향: $turnType")
     }
 }
