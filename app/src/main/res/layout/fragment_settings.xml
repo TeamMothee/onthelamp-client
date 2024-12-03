@@ -6,5 +6,6 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="설정" />
+        android:text="설정"
+        android:id="@+id/settingText"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
