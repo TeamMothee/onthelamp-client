@@ -28,6 +28,7 @@ import android.net.Uri
 import android.widget.Button
 import android.widget.ImageView
 import androidx.camera.core.*
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
@@ -39,14 +40,46 @@ import kotlinx.coroutines.launch
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.skt.tmap.TMapPoint
+import kotlinx.coroutines.suspendCancellableCoroutine
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
+import retrofit2.http.PATCH
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.coroutines.resume
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+data class LocationData(
+    val latitude: Double,
+    val longitude: Double
+)
+
+// Retrofit API Interface
+interface ReportService {
+    @PATCH("api/report")
+    suspend fun updateLocation(@Body locationData: LocationData)
+}
+
+object RetrofitClient {
+    private const val BASE_URL = "http://54.180.202.234:8000/"
+
+    private val client = OkHttpClient.Builder().build()
+
+    val instance: ReportService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ReportService::class.java)
+    }
+}
 
 class NavigationFragment : Fragment() {
 
@@ -268,6 +301,26 @@ class NavigationFragment : Fragment() {
             .setPositiveButton("ok") { dialog, which ->
                 val checkCnt = checkedItems.count { it }
                 Toast.makeText(requireContext(), "you choose $checkCnt items", Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+//                    var latitude = 37.7749
+//                    var longitude = -122.4194
+                    val (latitude, longitude) = getLocation()
+                    Log.d("bbbb","a")
+
+//                    realTimeLocationUtil.requestSingleLocation(
+//                        onLocationReceived = {
+//                                latitudeT, longitudeT ->
+//                            Log.d("bbb", "현재 위치: Lat_t=$latitudeT, Lon_t=$longitudeT")
+//                            latitude=latitudeT
+//                            longitude=longitudeT
+//                        },
+//                        onPermissionDenied = {
+//                            Toast.makeText(requireContext(), "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+//                        }
+//                    )
+                    Log.d("bbbb","현재 위치: Lat=$latitude, Lon=$longitude")
+                    updateReportLocation(latitude, longitude)
+                }
             }
             // Single-choice items (initialized with checked item)
             .setMultiChoiceItems(multiItems, checkedItems) { dialog, which, checked ->
@@ -413,5 +466,32 @@ class NavigationFragment : Fragment() {
 
         arrowView?.setImageResource(arrowResource) // 화살표 이미지 변경
         Log.d("NavigationFragment", "현재 방향: $turnType")
+    }
+
+    suspend fun updateReportLocation(latitude: Double, longitude: Double) {
+        val locationData = LocationData(latitude, longitude)
+
+        try {
+            RetrofitClient.instance.updateLocation(locationData)
+            println("Location updated successfully.")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            println("Failed to update location.")
+        }
+    }
+
+    suspend fun getLocation(): Pair<Double, Double> {
+        return suspendCancellableCoroutine { continuation ->
+            realTimeLocationUtil.requestSingleLocation(
+                onLocationReceived = { latitude, longitude ->
+                    Log.d("bbb", "현재 위치: Lat_t=$latitude, Lon_t=$longitude")
+                    continuation.resume(Pair(latitude, longitude)) // Resume coroutine with result
+                },
+                onPermissionDenied = {
+                    Toast.makeText(requireContext(), "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+                    continuation.resume(Pair(0.0, 0.0)) // Default values if permission is denied
+                }
+            )
+        }
     }
 }
