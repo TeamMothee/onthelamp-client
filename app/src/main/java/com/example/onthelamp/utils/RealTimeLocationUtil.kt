@@ -113,10 +113,11 @@ class RealTimeLocationUtil(private val context: Context) {
      */
     @SuppressLint("MissingPermission")
     private fun requestSingleLocationOnce(onLocationReceived: (latitude: Double, longitude: Double) -> Unit) {
-        val locationRequest = LocationRequest.create().apply {
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            numUpdates = 1 // 한 번만 업데이트
-        }
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L) // 요청 주기 5초
+            .setWaitForAccurateLocation(false) // 즉시 위치 반환
+            .setMaxUpdates(1) // 한 번만 업데이트
+            .build()
+
 
         val singleLocationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {

@@ -6,7 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
+
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -38,7 +38,6 @@ class MainFragment : Fragment(){
     private var textWatcher: TextWatcher? = null // TextWatcher 참조 저장
 
     private lateinit var tMapView: TMapView // TMapView 객체
-    private val markerMap = mutableMapOf<String, TMapMarkerItem>() // 추가된 마커 관리
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -52,12 +51,9 @@ class MainFragment : Fragment(){
         tMapView = TMapView(requireContext())
         tMapView.setSKTMapApiKey(tmapApiKey)
         tmapViewContainer.addView(tMapView)
+
 //      TODO: gps로 현재 위치 받아오기
-//        tMapView.setOnMapReadyListener {
-//            Log.d("MainFragment", "TMapView initialized successfully")
-//            tMapView.setCenterPoint(126.5662, 33.3786, true) // 새로운 좌표 (33.3786° N, 126.5662° E)로 이동
-//
-//        }
+
 
         // 버튼 클릭 시 MapFragment로 전환
         val startInput = view.findViewById<EditText>(R.id.startInput)
@@ -114,7 +110,6 @@ class MainFragment : Fragment(){
         // RecyclerView 숨기기
         hideRecyclerView()
         // 지도에 마커 추가 및 이동
-//        TODO: 마커 추가 및 이동
         addMarker(selectedItem)
     }
 

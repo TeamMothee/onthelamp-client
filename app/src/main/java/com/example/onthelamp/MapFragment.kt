@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.RadioGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 
@@ -30,10 +31,6 @@ class MapFragment : Fragment() {
     private lateinit var tMapView: TMapView
     private val apiService = TMapRetrofitClient.getInstance().create(TMapService::class.java)
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-
-    // 현재 위치를 저장할 변수
-    private var currentLat: Double? = null
-    private var currentLon: Double? = null
 
     private lateinit var realTimeLocationUtil: RealTimeLocationUtil
 
@@ -71,13 +68,23 @@ class MapFragment : Fragment() {
         realTimeLocationUtil = RealTimeLocationUtil(requireContext())
 
         //TODO:  현재 위치 (임의 설정) GPS로 변경 필요
-        val startLat = 37.29984683
-        val startLon = 127.01099779
 
         fetchSingleLocation(onLocationReceived = { latitude, longitude ->
             Log.d("MapFragment", "Current Location: Lat=$latitude, Lon=$longitude")
             selectedPOI?.let {
                 Log.d("MapFragment", "Received POI: ${it.name}, Lat: ${it.frontLat}, Lon: ${it.frontLon}")
+
+                // TextView에 POI 이름 설정
+                val startInput = view.findViewById<TextView>(R.id.startInput)
+                startInput.text = it.name
+
+
+                // TextView 클릭 시 MainFragment로 이동
+                startInput.setOnClickListener {
+                    findNavController().navigate(R.id.action_mapFragment_to_mainFragment)
+                }
+
+
                 if (latitude != null && longitude != null) {
                     // RadioGroup 버튼 클릭 처리
                     val riskRadioGroup = view.findViewById<RadioGroup>(R.id.riskRadioGroup)
