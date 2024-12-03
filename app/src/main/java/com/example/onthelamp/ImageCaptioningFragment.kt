@@ -22,15 +22,50 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.RequestBody
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Multipart
+import retrofit2.http.PATCH
+import retrofit2.http.POST
+import retrofit2.http.Part
+import java.io.File
+import java.io.FileOutputStream
+
+interface ImageCaptionService {
+    @Multipart
+    @PATCH("api/call_image_caption")
+    suspend fun uploadImage(@Part image: MultipartBody.Part): String
+}
 
 class ImageCaptioningFragment() : Fragment() {
 
     lateinit var captionedText : TextView
+
+    object RetrofitClient {
+        private const val BASE_URL = "https://54.180.202.234:8000/"
+
+        private val client = OkHttpClient.Builder().build()
+
+        val instance: ImageCaptionService by lazy {
+            Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(ImageCaptionService::class.java)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -68,30 +103,17 @@ class ImageCaptioningFragment() : Fragment() {
         if (savedUri != null) {
             val imageView: ImageView = view.findViewById(R.id.imageView)
             imageView.setImageURI(Uri.parse(savedUri))
-
-
-            val objectDetector = TFLiteObjectDetector(requireContext(), "yolov8n_float32.tflite")
-
-            // 예제 이미지 로드
-//        val imageStream = assets.open("sample_image.jpg")
-//        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.image_test)
-
-            val bitmap = uriToBitmap(Uri.parse(savedUri))
-
-            // 객체 탐지 실행
-            val results = objectDetector.detectObjects(bitmap)
-
-            // 결과 출력
-            results.forEach { result ->
-                println("Class ID: ${result.classId}, Confidence: ${result.confidence}")
-                println("Bounding Box: ${result.boundingBox.joinToString()}")
+            lifecycleScope.launch {
+                val result = callImageCaptionApi(savedUri)
+                result?.let {
+                    updateCaptionText(it)
+                } ?: Log.d("bbb","API CALL FAILED")
             }
-
-            objectDetector.close()
         }
     }
 
     private fun updateCaptionText(newText: String) {
+        Log.d("bbbb","$newText")
         captionedText.text = newText
     }
 
@@ -100,5 +122,27 @@ class ImageCaptioningFragment() : Fragment() {
         val inputStream = requireContext().contentResolver.openInputStream(uri)
 
         return BitmapFactory.decodeStream(inputStream).also { inputStream?.close() }
+    }
+
+    suspend fun callImageCaptionApi(filePath: String): String? {
+        val file = File(filePath)
+
+        if (!file.exists()) {
+            println("File not found at path: $filePath")
+            return null
+        }
+
+        // Create Request Body
+        val requestBody = RequestBody.create("image/jpeg".toMediaTypeOrNull(), file)
+        val multipartBody = MultipartBody.Part.createFormData("image", file.name, requestBody)
+
+        // Make API Call
+        return try {
+            val response = RetrofitClient.instance.uploadImage(multipartBody)
+            response
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }
