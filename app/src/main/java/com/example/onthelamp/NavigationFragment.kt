@@ -10,6 +10,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.Camera
@@ -27,6 +29,12 @@ import android.widget.ImageView
 import androidx.camera.core.*
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -38,6 +46,11 @@ class NavigationFragment : Fragment() {
     private lateinit var cameraExecutor: ExecutorService
     private var imageCapture: ImageCapture? = null
     lateinit var captureButton: Button
+    private lateinit var objectDetector: TFLiteObjectDetector
+
+    private var job: Job? = null
+
+    var checkAlert: Boolean = false
 
     companion object {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 101
@@ -89,6 +102,8 @@ class NavigationFragment : Fragment() {
 
         if (allPermissionsGranted()) {
             startCamera()
+            startRepeatingTask()
+            objectDetector = TFLiteObjectDetector(requireContext(), "yolov8n_float32.tflite")
         } else {
             ActivityCompat.requestPermissions(
                 requireActivity(),
@@ -96,6 +111,7 @@ class NavigationFragment : Fragment() {
                 CAMERA_PERMISSION_REQUEST_CODE
             )
         }
+
     }
 
     private fun allPermissionsGranted() = (ContextCompat.checkSelfPermission(
@@ -153,7 +169,12 @@ class NavigationFragment : Fragment() {
                     Log.d("NavigationFragment", "Photo capture succeeded: $savedUri")
                     Toast.makeText(requireContext(), "Photo saved: $savedUri", Toast.LENGTH_SHORT).show()
 //                    findNavController().navigate(R.id.imageCaptioningFragment)
-                    onPhotoCaptured?.invoke(savedUri)
+                    if(onPhotoCaptured!=null){
+                        onPhotoCaptured?.invoke(savedUri)
+                    }
+                    else{
+                        objectDetecting(savedUri)
+                    }
                 }
             }
         )
@@ -162,6 +183,8 @@ class NavigationFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         cameraExecutor.shutdown()
+        stopRepeatingTask()
+        objectDetector.close()
     }
 
     override fun onRequestPermissionsResult(
@@ -177,21 +200,88 @@ class NavigationFragment : Fragment() {
     }
 
     private fun materialRadioDialog() {
-        val singleItems = arrayOf("점자블록", "볼라드", "음향신호기")
-        var checkedItem = 0
+//        val singleItems = arrayOf("점자블록", "볼라드", "음향신호기")
+//        var checkedItem = 0
 
+        val multiItems = arrayOf("점자블록", "볼라드", "음향신호기")
+        val checkedItems = booleanArrayOf(false, false, false, false)
+
+//        MaterialAlertDialogBuilder(requireContext(),R.style.CustomDialog)
+//            .setTitle("Choose what you like")
+//            .setNeutralButton("cancel") { dialog, which ->
+//                // Respond to neutral button press
+//            }
+//            .setPositiveButton("ok") { dialog, which ->
+//                Toast.makeText(requireContext(), "Oh, you like ${singleItems[checkedItem]}!", Toast.LENGTH_SHORT).show()
+//            }
+//            // Single-choice items (initialized with checked item)
+//            .setSingleChoiceItems(singleItems, checkedItem) { dialog, which ->
+//                checkedItem = which
+//            }
+//            .show()
+//
         MaterialAlertDialogBuilder(requireContext(),R.style.CustomDialog)
             .setTitle("Choose what you like")
             .setNeutralButton("cancel") { dialog, which ->
                 // Respond to neutral button press
             }
             .setPositiveButton("ok") { dialog, which ->
-                Toast.makeText(requireContext(), "Oh, you like ${singleItems[checkedItem]}!", Toast.LENGTH_SHORT).show()
+                val checkCnt = checkedItems.count { it }
+                Toast.makeText(requireContext(), "you choose $checkCnt items", Toast.LENGTH_SHORT).show()
             }
             // Single-choice items (initialized with checked item)
-            .setSingleChoiceItems(singleItems, checkedItem) { dialog, which ->
-                checkedItem = which
+            .setMultiChoiceItems(multiItems, checkedItems) { dialog, which, checked ->
+                checkedItems[which] = checked
             }
             .show()
     }
+
+    private fun startRepeatingTask() {
+        job = CoroutineScope(Dispatchers.Main).launch {
+            while (isActive) {
+                takePhoto()
+                delay(5000) // 5초 대기
+            }
+        }
+    }
+
+    private fun stopRepeatingTask() {
+        job?.cancel()
+    }
+
+    private fun objectDetecting(savedUri : Uri) {
+
+
+        // 예제 이미지 로드
+//        val imageStream = assets.open("sample_image.jpg")
+//        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.image_test)
+
+        val bitmap = uriToBitmap(savedUri)
+
+        // 객체 탐지 실행
+        val results = objectDetector.detectObjects(bitmap)
+
+        // 결과 출력
+        results.forEach { result ->
+            if(!checkAlert){
+                if(result.classId==1 || result.classId==2 || result.classId==3 || result.classId==5 || result.classId==7 || result.classId==36){
+                    checkAlert=true
+                }
+            }
+            println("Class ID: ${result.classId}, Confidence: ${result.confidence}")
+            println("Bounding Box: ${result.boundingBox.joinToString()}")
+        }
+        if(checkAlert){
+            view?.findViewById<View>(R.id.alertView)?.visibility = View.VISIBLE
+            checkAlert=false
+        }
+    }
+
+    private fun uriToBitmap(uri: Uri): Bitmap {
+
+        val inputStream = requireContext().contentResolver.openInputStream(uri)
+
+        return BitmapFactory.decodeStream(inputStream).also { inputStream?.close() }
+    }
+
 }

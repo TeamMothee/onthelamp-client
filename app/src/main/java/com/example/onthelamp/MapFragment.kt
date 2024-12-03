@@ -18,7 +18,7 @@ class MapFragment : Fragment() {
     ): View? {
         // fragment_map.xml 레이아웃을 설정
         val view = inflater.inflate(R.layout.fragment_map, container, false)
-
+1
         // TMapView 동적 추가
         val tmapViewContainer = view.findViewById<FrameLayout>(R.id.tmapViewContainer)
         val tMapView = TMapView(requireContext())

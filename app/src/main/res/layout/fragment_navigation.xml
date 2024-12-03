@@ -14,4 +14,15 @@
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="0dp" />
 
+    <View
+        android:id="@+id/alertView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="0dp"
+        android:background="@color/alert_red"
+        android:visibility="gone"
+        >
+
+    </View>
 </RelativeLayout>
