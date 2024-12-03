@@ -26,11 +26,13 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.setupWithNavController
+import com.example.onthelamp.utils.TTSHelper
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class ImageCaptioningFragment() : Fragment() {
 
     lateinit var captionedText : TextView
+    private lateinit var ttsHelper: TTSHelper
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -53,11 +55,11 @@ class ImageCaptioningFragment() : Fragment() {
 
             updateRightButtonText("안내 복귀")
         }
+        ttsHelper = TTSHelper(requireContext())
 
         captionedText = view.findViewById(R.id.captioned_text)
 
         updateCaptionText("앞에 자전거가 다가오고 있고, 자동차는 길을 건너고 있습니다. 그리고 강아지를 산책시키는 사람이 있습니다.")
-
 
         mainActivity?.setRightButtonColor(R.color.button_blue)
 

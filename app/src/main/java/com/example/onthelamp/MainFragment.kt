@@ -279,6 +279,10 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
         outsideTouchView?.setOnClickListener {
             recyclerView?.visibility = View.GONE
             outsideTouchView.visibility = View.GONE
+            ttsHelper.speak("목록을 닫았습니다. 새로 선택하려면 다시 말씀해주세요.")
+            speechRecognizerHelper = SpeechRecognizerHelper(requireContext()) { recognizedText ->
+                handleSpeechResult(recognizedText)
+            }
         }
     }
 
@@ -312,6 +316,10 @@ class MainFragment : Fragment(), OnMicButtonClickListener {
         outsideTouchView?.setOnClickListener {
             recyclerView?.visibility = View.GONE
             outsideTouchView.visibility = View.GONE
+            ttsHelper.speak("목록을 닫았습니다. 새로 선택하려면 다시 말씀해주세요.")
+            speechRecognizerHelper = SpeechRecognizerHelper(requireContext()) { recognizedText ->
+                handleSpeechResult(recognizedText)
+            }
         }
 
         // TTS로 선택지 읽고 선택받기
