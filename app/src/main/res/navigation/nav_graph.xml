@@ -13,6 +13,9 @@
         <action
             android:id="@+id/action_navigationFragment_to_imageCaptioningFragment"
             app:destination="@id/imageCaptioningFragment" />
+        <argument
+            android:name="points"
+            app:argType="string" />
     </fragment>
     <fragment
         android:id="@+id/imageCaptioningFragment"

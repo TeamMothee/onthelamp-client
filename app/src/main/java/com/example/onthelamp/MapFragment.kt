@@ -21,6 +21,7 @@ import com.example.onthelamp.data.model.PedestrianRouteRequest
 import com.example.onthelamp.data.model.PedestrianRouteResponse
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.gson.Gson
 import com.skt.tmap.TMapPoint
 import com.skt.tmap.TMapView
 import com.skt.tmap.overlay.TMapPolyLine
@@ -33,6 +34,8 @@ class MapFragment : Fragment() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private lateinit var realTimeLocationUtil: RealTimeLocationUtil
+
+    private var routePoints: List<TMapPoint> = emptyList()
 
     // 권한 요청 런처
     private val requestPermissionLauncher = registerForActivityResult(
@@ -109,11 +112,25 @@ class MapFragment : Fragment() {
 
         // MainActivity의 setRightButtonAction 호출
         (requireActivity() as? MainActivity)?.setRightButtonAction {
-            findNavController().navigate(R.id.action_mapFragment_to_navigationFragment)
+            navigateToNavFragment()
         }
 
 
         return view
+    }
+
+    private fun navigateToNavFragment() {
+        if (routePoints.isNotEmpty()) {
+            // points를 JSON으로 변환
+            val gson = Gson()
+            val pointsJson = gson.toJson(routePoints)
+
+            // NavFragment로 데이터 전달
+            val action = MapFragmentDirections.actionMapFragmentToNavigationFragment(pointsJson)
+            findNavController().navigate(action)
+        } else {
+            Toast.makeText(requireContext(), "경로가 없습니다. 경로를 계산해주세요.", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun fetchSingleLocation( onLocationReceived: (latitude: Double, longitude: Double) -> Unit) {
@@ -191,6 +208,7 @@ class MapFragment : Fragment() {
                         }
                     }
 
+                    routePoints = points
                     drawRoute(points)
                 } else {
                     Log.e("MapFragment", "API 호출 실패: ${response.code()}")

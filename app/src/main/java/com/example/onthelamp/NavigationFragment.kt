@@ -1,5 +1,6 @@
 package com.example.onthelamp
 
+import RealTimeLocationUtil
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -27,9 +28,16 @@ import android.widget.ImageView
 import androidx.camera.core.*
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.skt.tmap.TMapPoint
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 
 class NavigationFragment : Fragment() {
@@ -38,6 +46,10 @@ class NavigationFragment : Fragment() {
     private lateinit var cameraExecutor: ExecutorService
     private var imageCapture: ImageCapture? = null
     lateinit var captureButton: Button
+
+    private var points: List<TMapPoint> = emptyList()
+
+    private lateinit var realTimeLocationUtil: RealTimeLocationUtil
 
     companion object {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 101
@@ -61,6 +73,33 @@ class NavigationFragment : Fragment() {
 //        mainActivity?.rightButton?.setOnClickListener{
 //            takePhoto()
 //        }
+
+        // 방향 view
+
+        // 최단 거리 points
+        val pointsJson = arguments?.getString("points")
+        pointsJson?.let {
+            val gson = Gson()
+            val type = object : TypeToken<List<TMapPoint>>() {}.type
+            points = gson.fromJson(it, type)
+
+            // points 데이터 활용
+            points.forEach { point ->
+                Log.d("NavFragment", "Point: ${point.latitude}, ${point.longitude}")
+            }
+        }
+
+        realTimeLocationUtil = RealTimeLocationUtil(requireContext())
+
+        realTimeLocationUtil.startRealTimeLocationUpdates(
+            onLocationUpdate = { latitude, longitude ->
+                Log.d("NavigationFragment", "현재 위치: Lat=$latitude, Lon=$longitude")
+                updateDirection(latitude, longitude) // 방향 업데이트
+            },
+            onPermissionDenied = {
+                Toast.makeText(requireContext(), "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            }
+        )
 
         mainActivity?.apply{
             setRightButtonAction {
@@ -162,6 +201,7 @@ class NavigationFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         cameraExecutor.shutdown()
+        realTimeLocationUtil.stopRealTimeLocationUpdates()
     }
 
     override fun onRequestPermissionsResult(
@@ -193,5 +233,50 @@ class NavigationFragment : Fragment() {
                 checkedItem = which
             }
             .show()
+    }
+
+    // 다음 포인트 계산
+    private fun findNextPoint(currentLat: Double, currentLon: Double, points: List<TMapPoint>): TMapPoint? {
+        val distances = points.map { point ->
+            Pair(point, calculateDistance(currentLat, currentLon, point.latitude, point.longitude))
+        }
+        val sortedPoints = distances.sortedBy { it.second }
+        return sortedPoints.getOrNull(1)?.first // 가장 가까운 포인트 다음의 포인트
+    }
+
+    // 거리 계산 함수
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val earthRadius = 6371e3 // 지구 반지름 (미터 단위)
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLon / 2) * sin(dLon / 2)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return earthRadius * c
+    }
+
+    // 방향(각도) 계산
+    private fun calculateBearing(currentLat: Double, currentLon: Double, targetLat: Double, targetLon: Double): Float {
+        val dLon = Math.toRadians(targetLon - currentLon)
+        val y = sin(dLon) * cos(Math.toRadians(targetLat))
+        val x = cos(Math.toRadians(currentLat)) * sin(Math.toRadians(targetLat)) -
+                sin(Math.toRadians(currentLat)) * cos(Math.toRadians(targetLat)) * Math.cos(dLon)
+        return ((Math.toDegrees(atan2(y, x)) + 360) % 360).toFloat()
+    }
+
+    // 화살표 UI 업데이트
+    private fun updateArrowDirection(bearing: Float) {
+        val arrowView = view?.findViewById<ImageView>(R.id.arrowView)
+        arrowView?.rotation = bearing
+    }
+
+    // 방향 업데이트 연결
+    private fun updateDirection(currentLat: Double, currentLon: Double) {
+        val nextPoint = findNextPoint(currentLat, currentLon, points)
+        nextPoint?.let { point ->
+            val bearing = calculateBearing(currentLat, currentLon, point.latitude, point.longitude)
+            updateArrowDirection(bearing) // 화살표 업데이트
+        } ?: Log.d("NavigationFragment", "다음 포인트를 찾을 수 없습니다.")
     }
 }
