@@ -14,6 +14,8 @@ import androidx.fragment.app.Fragment
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
@@ -27,6 +29,7 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.setupWithNavController
+import com.example.onthelamp.utils.TTSHelper
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -67,6 +70,8 @@ class ImageCaptioningFragment() : Fragment() {
         }
     }
 
+    private lateinit var ttsHelper: TTSHelper
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -89,10 +94,11 @@ class ImageCaptioningFragment() : Fragment() {
             updateRightButtonText("안내 복귀")
         }
 
+        ttsHelper = TTSHelper(requireContext())
+
         captionedText = view.findViewById(R.id.captioned_text)
 
         updateCaptionText("앞에 자전거가 다가오고 있고, 자동차는 길을 건너고 있습니다. 그리고 강아지를 산책시키는 사람이 있습니다.")
-
 
         mainActivity?.setRightButtonColor(R.color.button_blue)
 
@@ -114,6 +120,14 @@ class ImageCaptioningFragment() : Fragment() {
 
     private fun updateCaptionText(newText: String) {
         Log.d("bbbb","$newText")
+        if (ttsHelper.isInitialized) {
+            ttsHelper.speak(newText)
+        } else {
+            // 초기화가 완료되면 호출
+            Handler(Looper.getMainLooper()).postDelayed({
+                ttsHelper.speak(newText)
+            }, 800)
+        }
         captionedText.text = newText
     }
 
