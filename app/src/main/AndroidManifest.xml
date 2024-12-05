@@ -22,6 +22,12 @@
     <!--오디오 사용 권한-->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!--외부 저장소 사용 권한-->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

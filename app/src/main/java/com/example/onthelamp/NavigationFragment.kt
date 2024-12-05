@@ -63,7 +63,7 @@ data class LocationData(
 
 // Retrofit API Interface
 interface ReportService {
-    @PATCH("api/report")
+    @PATCH("api/report/")
     suspend fun updateLocation(@Body locationData: LocationData)
 }
 
@@ -365,12 +365,17 @@ class NavigationFragment : Fragment() {
         // 결과 출력
         results.forEach { result ->
             if(!checkAlert){
-                if(result.classId==1 || result.classId==2 || result.classId==3 || result.classId==5 || result.classId==7 || result.classId==36){
-                    checkAlert=true
+                if(result.classId==2){
+
+                    println("Class ID: ${result.classId}, Confidence: ${result.confidence}")
+                    println("Bounding Box: ${result.boundingBox.joinToString()}")
+                    if((result.boundingBox[2]*100-result.boundingBox[0]*100)*(result.boundingBox[3]*100-result.boundingBox[1]*100)>60 && result.confidence>=0.99){
+                        println("Box Size = ${(result.boundingBox[2]*100-result.boundingBox[0]*100)*(result.boundingBox[3]*100-result.boundingBox[1]*100)}")
+                        checkAlert=true
+                    }
                 }
             }
-            println("Class ID: ${result.classId}, Confidence: ${result.confidence}")
-            println("Bounding Box: ${result.boundingBox.joinToString()}")
+
         }
         if(checkAlert){
             ttsHelper.speak("차량이 앞에 있습니다. 주의하세요.")

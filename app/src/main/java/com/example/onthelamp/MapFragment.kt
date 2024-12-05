@@ -19,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.onthelamp.data.model.PedestrianRouteRequest
 import com.example.onthelamp.data.model.PedestrianRouteResponse
@@ -30,8 +31,49 @@ import com.google.gson.Gson
 import com.skt.tmap.TMapPoint
 import com.skt.tmap.TMapView
 import com.skt.tmap.overlay.TMapPolyLine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import retrofit2.Call
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.PATCH
+import retrofit2.http.Query
 import java.net.URLEncoder
+
+data class RouteData(
+    val start_x: Double,
+    val start_y: Double,
+    val end_x: Double,
+    val end_y: Double
+)
+
+interface RouteApi {
+    @GET("find_path/") // Replace with the correct endpoint path
+    suspend fun getSafeRouteByAPI(
+        @Query("start_x") startX: Double,
+        @Query("start_y") startY: Double,
+        @Query("end_x") endX: Double,
+        @Query("end_y") endY: Double
+    ): PedestrianRouteResponse
+}
+
+object GetRouteRetrofitClient {
+
+    private val client = OkHttpClient.Builder().build()
+
+    val instance: RouteApi by lazy {
+        Retrofit.Builder()
+            .baseUrl("http://54.180.202.234:8000/api/") // Replace with your base URL
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create()) // Gson for JSON parsing
+            .build()
+            .create(RouteApi::class.java)
+    }
+}
 
 class MapFragment : Fragment(), OnMicButtonClickListener {
     private lateinit var tMapView: TMapView
@@ -106,18 +148,96 @@ class MapFragment : Fragment(), OnMicButtonClickListener {
                     riskRadioGroup.setOnCheckedChangeListener { _, checkedId ->
                         when (checkedId) {
                             R.id.highRisk -> { // "최단" 버튼
+                                tMapView.removeAllTMapPolyLine()
                                 Log.d("MapFragment", "최단 경로 버튼 선택됨")
                                 searchRoute(longitude, latitude, it.frontLon!!, it.frontLat!!)
                             }
                             R.id.lowRisk -> { // "안전" 버튼
+                                tMapView.removeAllTMapPolyLine()
                                 Log.d("MapFragment", "안전 경로 버튼 선택됨 (아직 구현되지 않음)")
                                 // TODO: 안전 경로 탐색 로직 추가 예정
+                                lifecycleScope.launch {
+                                    val result = getSafeRoute(longitude, latitude, selectedPOI.frontLon!!, selectedPOI.frontLat!!)
+                                    val points = mutableListOf<TMapPoint>()
+                                    result?.features?.forEach { feature ->
+                                        when (feature.geometry.type) {
+                                            "LineString" -> {
+                                                val coordinates = feature.geometry.coordinates
+                                                if (coordinates is List<*>) {
+                                                    coordinates.forEach { coord ->
+                                                        if (coord is List<*> && coord.size >= 2) {
+                                                            val latitude = coord[0] as Double
+                                                            val longitude = coord[1] as Double
+                                                            val lngLat = TMapPoint(longitude, latitude)
+                                                            points.add(lngLat)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            "Point" -> {
+                                                val coordinates = feature.geometry.coordinates
+                                                if (coordinates is List<*> && coordinates.size == 2) {
+                                                    val latitude = coordinates[0] as Double
+                                                    val longitude = coordinates[1] as Double
+                                                    val lngLat = TMapPoint(longitude, latitude)
+                                                    points.add(lngLat)
+                                                }
+                                            }
+                                            else -> {
+                                                Log.e("MapFragment", "Unknown geometry type: ${feature.geometry.type}")
+                                            }
+                                        }
+                                    }
+
+                                    routePoints = points
+                                    drawRoute(points)
+                                    Log.d("getSafeRoute","$result")
+                                }
                             }
                         }
                     }
                     // 기본적으로 "안전" 경로 버튼 동작 수행
                     // TODO: api 연결
-                    searchRoute(longitude, latitude, it.frontLon!!, it.frontLat!!)
+//                    searchRoute(longitude, latitude, it.frontLon!!, it.frontLat!!)
+                    Log.d("getSafeRouteInput","126.936326, 37.557640, ${selectedPOI.frontLon!!}, ${selectedPOI.frontLat!!}")
+                    lifecycleScope.launch {
+                        val result = getSafeRoute(longitude, latitude, selectedPOI.frontLon!!, selectedPOI.frontLat!!)
+                        val points = mutableListOf<TMapPoint>()
+                        result?.features?.forEach { feature ->
+                            when (feature.geometry.type) {
+                                "LineString" -> {
+                                    val coordinates = feature.geometry.coordinates
+                                    if (coordinates is List<*>) {
+                                        coordinates.forEach { coord ->
+                                            if (coord is List<*> && coord.size >= 2) {
+                                                val latitude = coord[0] as Double
+                                                val longitude = coord[1] as Double
+                                                val lngLat = TMapPoint(longitude, latitude)
+                                                points.add(lngLat)
+                                            }
+                                        }
+                                    }
+                                }
+                                "Point" -> {
+                                    val coordinates = feature.geometry.coordinates
+                                    if (coordinates is List<*> && coordinates.size == 2) {
+                                        val latitude = coordinates[0] as Double
+                                        val longitude = coordinates[1] as Double
+                                        val lngLat = TMapPoint(longitude, latitude)
+                                        points.add(lngLat)
+                                    }
+                                }
+                                else -> {
+                                    Log.e("MapFragment", "Unknown geometry type: ${feature.geometry.type}")
+                                }
+                            }
+                        }
+
+                        routePoints = points
+                        drawRoute(points)
+                        Log.d("getSafeRoute","$result")
+
+                    }
                 }
             }
         })
@@ -145,12 +265,54 @@ class MapFragment : Fragment(), OnMicButtonClickListener {
 
         fetchSingleLocation { latitude, longitude ->
             if (selectedPOI != null) {
+                Log.d("isSafeRoute","$isSafeRoute")
                 if (isSafeRoute) {
                     Log.d("MapFragment", "안전 경로 계산 시작")
                     // 안전 경로 계산 로직 추가
                     // TODO: 안전 경로 API 연결 필요
-                    searchRoute(longitude, latitude, selectedPOI.frontLon!!, selectedPOI.frontLat!!)
+//                    searchRoute(longitude, latitude, selectedPOI.frontLon!!, selectedPOI.frontLat!!)
+                    tMapView.removeAllTMapPolyLine()
+                    Log.d("MapFragment", "안전 경로 버튼 선택됨 (아직 구현되지 않음)")
+                    // TODO: 안전 경로 탐색 로직 추가 예정
+                    lifecycleScope.launch {
+                        val result = getSafeRoute(longitude, latitude, selectedPOI.frontLon!!, selectedPOI.frontLat!!)
+                        val points = mutableListOf<TMapPoint>()
+                        result?.features?.forEach { feature ->
+                            when (feature.geometry.type) {
+                                "LineString" -> {
+                                    val coordinates = feature.geometry.coordinates
+                                    if (coordinates is List<*>) {
+                                        coordinates.forEach { coord ->
+                                            if (coord is List<*> && coord.size >= 2) {
+                                                val latitude = coord[0] as Double
+                                                val longitude = coord[1] as Double
+                                                val lngLat = TMapPoint(longitude, latitude)
+                                                points.add(lngLat)
+                                            }
+                                        }
+                                    }
+                                }
+                                "Point" -> {
+                                    val coordinates = feature.geometry.coordinates
+                                    if (coordinates is List<*> && coordinates.size == 2) {
+                                        val latitude = coordinates[0] as Double
+                                        val longitude = coordinates[1] as Double
+                                        val lngLat = TMapPoint(longitude, latitude)
+                                        points.add(lngLat)
+                                    }
+                                }
+                                else -> {
+                                    Log.e("MapFragment", "Unknown geometry type: ${feature.geometry.type}")
+                                }
+                            }
+                        }
+
+                        routePoints = points
+                        drawRoute(points)
+                        Log.d("getSafeRoute","$result")
+                    }
                 } else {
+                    tMapView.removeAllTMapPolyLine()
                     Log.d("MapFragment", "최단 경로 계산 시작")
                     searchRoute(longitude, latitude, selectedPOI.frontLon!!, selectedPOI.frontLat!!)
                 }
@@ -272,7 +434,6 @@ class MapFragment : Fragment(), OnMicButtonClickListener {
         val startName = URLEncoder.encode("출발지", "UTF-8")
         val endName = URLEncoder.encode("목적지", "UTF-8")
 
-        Log.d("MapFragment", "Search route: ($startX, $startY) -> ($endX, $endY)")
 
         val request = PedestrianRouteRequest(
             startX = startX,
@@ -299,6 +460,7 @@ class MapFragment : Fragment(), OnMicButtonClickListener {
                     val points = mutableListOf<TMapPoint>()
 
                     Log.d("findPedestrianRoute" , "Response: $response")
+                    Log.d("findPedestrianRouteBody" , "Response: $routeResponse")
 
                     routeResponse?.features?.forEach { feature ->
                         when (feature.geometry.type) {
@@ -361,6 +523,25 @@ class MapFragment : Fragment(), OnMicButtonClickListener {
         if (points.isNotEmpty()) {
             tMapView.setCenterPoint(points.first().latitude, points.first().longitude, true)
             tMapView.zoomLevel = 14
+        }
+    }
+
+    suspend fun getSafeRoute(
+        startX: Double,
+        startY: Double,
+        endX: Double,
+        endY: Double
+    ): PedestrianRouteResponse? {
+        return withContext(Dispatchers.IO) { // Ensures the network call runs on a background thread
+            try {
+                val response = GetRouteRetrofitClient.instance.getSafeRouteByAPI(startX, startY, endX, endY)
+                println("get safe route successfully")
+                response
+            } catch (e: Exception) {
+                e.printStackTrace()
+                println("Failed to get safe route")
+                null
+            }
         }
     }
 }
